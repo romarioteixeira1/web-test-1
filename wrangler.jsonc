@@ -2,9 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "web-test-1",
   "compatibility_date": "2026-09-02",
+  "main": "./worker/index.ts",
   "assets": {
-    "not_found_handling": "single-page-application"
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "web-test-1-db",
+      "database_id": "a664fe57-15a9-4349-b746-098df577da91"
+    }
+  ],
   "observability": {
     "enabled": true
   }
