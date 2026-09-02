@@ -1,0 +1,24 @@
+/* Base element resets and defaults that sit on top of Tailwind's preflight. */
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--color-text-strong);
+  font-weight: 500;
+}
+
+code {
+  font-family: var(--font-mono);
+}
