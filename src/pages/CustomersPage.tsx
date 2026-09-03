@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import * as api from '../api/customers'
 import { CustomerFormModal } from '../components/customers/CustomerFormModal'
 import { CustomerTable } from '../components/customers/CustomerTable'
@@ -7,13 +8,21 @@ import type { Customer, CustomerInput } from '../../shared/customer'
 type ModalState = { mode: 'create' } | { mode: 'edit'; customer: Customer } | null
 
 export function CustomersPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const openCreateOnLoad = (location.state as { openCreate?: boolean } | null)?.openCreate ?? false
   const [customers, setCustomers] = useState<Customer[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [modal, setModal] = useState<ModalState>(null)
+  const [modal, setModal] = useState<ModalState>(openCreateOnLoad ? { mode: 'create' } : null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (openCreateOnLoad) navigate(location.pathname, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function load(q?: string) {
     setLoading(true)
