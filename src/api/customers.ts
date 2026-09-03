@@ -1,4 +1,4 @@
-import type { Customer, CustomerInput } from '../../shared/customer'
+import type { Customer, CustomerInput, CustomerStats } from '../../shared/customer'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -18,6 +18,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export function listCustomers(query?: string) {
   const search = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''
   return request<Customer[]>(`/api/customers${search}`)
+}
+
+export function getCustomerStats() {
+  return request<CustomerStats>('/api/customers/stats')
 }
 
 export function createCustomer(input: CustomerInput) {

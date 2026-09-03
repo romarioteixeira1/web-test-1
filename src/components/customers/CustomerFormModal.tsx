@@ -39,18 +39,59 @@ export function CustomerFormModal({
         <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className={labelClass}>
-            Nome *
-            <input
-              className={fieldClass}
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              required
-              autoFocus
-            />
-          </label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+            <label className={labelClass}>
+              Nome completo *
+              <input
+                className={fieldClass}
+                value={form.name}
+                onChange={(e) => set('name', e.target.value)}
+                required
+                autoFocus
+              />
+            </label>
+            <label className={labelClass}>
+              Status
+              <select
+                className={fieldClass}
+                value={form.status}
+                onChange={(e) => set('status', e.target.value as CustomerInput['status'])}
+              >
+                <option value="active">Ativo</option>
+                <option value="inactive">Inativo</option>
+              </select>
+            </label>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              CPF / CNPJ
+              <input
+                className={fieldClass}
+                value={form.document ?? ''}
+                onChange={(e) => set('document', e.target.value)}
+              />
+            </label>
+            <label className={labelClass}>
+              Data de nascimento
+              <input
+                type="date"
+                className={fieldClass}
+                value={form.birth_date ?? ''}
+                onChange={(e) => set('birth_date', e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Telefone / WhatsApp
+              <input
+                className={fieldClass}
+                value={form.phone ?? ''}
+                onChange={(e) => set('phone', e.target.value)}
+              />
+            </label>
             <label className={labelClass}>
               Email
               <input
@@ -60,28 +101,11 @@ export function CustomerFormModal({
                 onChange={(e) => set('email', e.target.value)}
               />
             </label>
-            <label className={labelClass}>
-              Telefone
-              <input
-                className={fieldClass}
-                value={form.phone ?? ''}
-                onChange={(e) => set('phone', e.target.value)}
-              />
-            </label>
           </div>
 
-          <label className={labelClass}>
-            CPF / CNPJ
-            <input
-              className={fieldClass}
-              value={form.document ?? ''}
-              onChange={(e) => set('document', e.target.value)}
-            />
-          </label>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_1fr]">
             <label className={labelClass}>
-              Rua
+              Endereço
               <input
                 className={fieldClass}
                 value={form.street ?? ''}
@@ -96,9 +120,36 @@ export function CustomerFormModal({
                 onChange={(e) => set('number', e.target.value)}
               />
             </label>
+            <label className={labelClass}>
+              Complemento
+              <input
+                className={fieldClass}
+                value={form.complement ?? ''}
+                onChange={(e) => set('complement', e.target.value)}
+              />
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Bairro
+              <input
+                className={fieldClass}
+                value={form.neighborhood ?? ''}
+                onChange={(e) => set('neighborhood', e.target.value)}
+              />
+            </label>
+            <label className={labelClass}>
+              CEP
+              <input
+                className={fieldClass}
+                value={form.zip_code ?? ''}
+                onChange={(e) => set('zip_code', e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
             <label className={labelClass}>
               Cidade
               <input
@@ -114,14 +165,6 @@ export function CustomerFormModal({
                 value={form.state ?? ''}
                 onChange={(e) => set('state', e.target.value)}
                 maxLength={2}
-              />
-            </label>
-            <label className={labelClass}>
-              CEP
-              <input
-                className={fieldClass}
-                value={form.zip_code ?? ''}
-                onChange={(e) => set('zip_code', e.target.value)}
               />
             </label>
           </div>

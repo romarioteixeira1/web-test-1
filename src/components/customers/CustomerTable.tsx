@@ -6,6 +6,12 @@ type Props = {
   onDelete: (customer: Customer) => void
 }
 
+function formatDate(value: string) {
+  const date = new Date(value.includes(' ') ? value.replace(' ', 'T') + 'Z' : value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString('pt-BR')
+}
+
 export function CustomerTable({ customers, onEdit, onDelete }: Props) {
   if (customers.length === 0) {
     return <p className="py-12 text-center text-sm">Nenhum cliente cadastrado ainda.</p>
@@ -13,13 +19,15 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[640px] text-left text-sm">
+      <table className="w-full min-w-[860px] text-left text-sm">
         <thead className="bg-surface text-text-strong">
           <tr>
             <th className="px-4 py-3 font-medium">Nome</th>
             <th className="px-4 py-3 font-medium">Contato</th>
             <th className="px-4 py-3 font-medium">Documento</th>
             <th className="px-4 py-3 font-medium">Cidade/UF</th>
+            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Cadastro</th>
             <th className="px-4 py-3 font-medium" />
           </tr>
         </thead>
@@ -35,6 +43,18 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
               <td className="px-4 py-3">
                 {customer.city ? `${customer.city}${customer.state ? `/${customer.state}` : ''}` : '—'}
               </td>
+              <td className="px-4 py-3">
+                <span
+                  className={
+                    customer.status === 'active'
+                      ? 'rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-500'
+                      : 'rounded-full bg-red-500/15 px-2 py-1 text-xs font-medium text-red-500'
+                  }
+                >
+                  {customer.status === 'active' ? 'Ativo' : 'Inativo'}
+                </span>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.created_at)}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
                 <button
                   type="button"
