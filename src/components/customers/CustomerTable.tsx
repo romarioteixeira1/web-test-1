@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import type { Customer } from '../../../shared/customer'
 
 type Props = {
@@ -34,7 +35,11 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
         <tbody>
           {customers.map((customer) => (
             <tr key={customer.id} className="border-t border-border">
-              <td className="px-4 py-3 text-text-strong">{customer.name}</td>
+              <td className="px-4 py-3 text-text-strong">
+                <Link to={`/clientes/${customer.id}`} className="hover:text-accent hover:underline">
+                  {customer.name}
+                </Link>
+              </td>
               <td className="px-4 py-3">
                 <div>{customer.email || '—'}</div>
                 <div>{customer.phone || ''}</div>
@@ -56,6 +61,9 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.created_at)}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
+                <Link to={`/clientes/${customer.id}`} className="mr-3 hover:text-accent">
+                  Compras
+                </Link>
                 <button
                   type="button"
                   onClick={() => onEdit(customer)}

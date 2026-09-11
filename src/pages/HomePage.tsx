@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { getCustomerStats } from '../api/customers'
+import { IconUsers } from '../components/layout/icons'
 import type { CustomerStats } from '../../shared/customer'
 
 function formatDate(value: string) {
@@ -34,11 +35,11 @@ export function HomePage() {
   }, [])
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-10">
+    <section className="flex w-full flex-1 flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-medium text-text-strong">Painel</h1>
-          <p className="text-sm">Visão geral do sistema de clientes</p>
+          <h2 className="text-2xl font-medium text-text-strong">Visão geral</h2>
+          <p className="text-sm">Resumo do sistema de clientes</p>
         </div>
         <Link
           to="/clientes"
@@ -55,15 +56,20 @@ export function HomePage() {
       {stats && (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-border p-5">
-              <p className="text-sm">Total de clientes</p>
-              <p className="mt-1 text-3xl font-semibold text-text-strong">{stats.total}</p>
+            <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                <IconUsers className="size-6" />
+              </span>
+              <div>
+                <p className="text-sm">Total de clientes</p>
+                <p className="mt-1 text-3xl font-semibold text-text-strong">{stats.total}</p>
+              </div>
             </div>
-            <div className="rounded-lg border border-border p-5">
+            <div className="rounded-lg border border-border bg-surface p-5">
               <p className="text-sm">Clientes ativos</p>
               <p className="mt-1 text-3xl font-semibold text-emerald-500">{stats.active}</p>
             </div>
-            <div className="rounded-lg border border-border p-5">
+            <div className="rounded-lg border border-border bg-surface p-5">
               <p className="text-sm">Clientes inativos</p>
               <p className="mt-1 text-3xl font-semibold text-red-500">{stats.inactive}</p>
             </div>

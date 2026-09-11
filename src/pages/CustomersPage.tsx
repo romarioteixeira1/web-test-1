@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import * as api from '../api/customers'
 import { CustomerFormModal } from '../components/customers/CustomerFormModal'
 import { CustomerTable } from '../components/customers/CustomerTable'
@@ -10,9 +10,10 @@ type ModalState = { mode: 'create' } | { mode: 'edit'; customer: Customer } | nu
 export function CustomersPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const query = searchParams.get('busca') ?? ''
   const openCreateOnLoad = (location.state as { openCreate?: boolean } | null)?.openCreate ?? false
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(openCreateOnLoad ? { mode: 'create' } : null)
@@ -37,12 +38,8 @@ export function CustomersPage() {
   }
 
   useEffect(() => {
-    load()
-  }, [])
-
-  useEffect(() => {
-    const timeout = setTimeout(() => load(query), 300)
-    return () => clearTimeout(timeout)
+    load(query)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
   async function handleSubmit(input: CustomerInput) {
@@ -70,9 +67,9 @@ export function CustomersPage() {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
+    <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h1 className="text-2xl font-medium text-text-strong">Clientes</h1>
+        <h2 className="text-2xl font-medium text-text-strong">Clientes</h2>
         <button
           type="button"
           onClick={() => setModal({ mode: 'create' })}
@@ -82,12 +79,11 @@ export function CustomersPage() {
         </button>
       </div>
 
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar por nome, email ou documento..."
-        className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none focus:border-accent sm:max-w-sm"
-      />
+      {query && (
+        <p className="text-sm">
+          Resultados para <span className="text-text-strong">"{query}"</span>
+        </p>
+      )}
 
       {loading && <p className="text-sm">Carregando...</p>}
       {loadError && <p className="text-sm text-red-500">{loadError}</p>}

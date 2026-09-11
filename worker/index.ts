@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Customer, CustomerInput, CustomerStats, CustomerStatus } from '../shared/customer'
+import type { Purchase, PurchaseInput } from '../shared/purchase'
 
 type Bindings = {
   DB: D1Database
@@ -150,6 +151,56 @@ app.delete('/api/customers/:id', async (c) => {
   const { meta } = await c.env.DB.prepare('DELETE FROM customers WHERE id = ?').bind(id).run()
 
   if (meta.changes === 0) return c.json({ error: 'Cliente não encontrado' }, 404)
+  return c.body(null, 204)
+})
+
+function normalizePurchase(body: Partial<PurchaseInput>) {
+  return {
+    description: body.description?.trim() ?? '',
+    amount: Number.isFinite(body.amount) ? Number(body.amount) : 0,
+    purchased_at: body.purchased_at?.trim() || new Date().toISOString().slice(0, 10),
+    notes: body.notes?.trim() || null,
+  }
+}
+
+app.get('/api/customers/:id/purchases', async (c) => {
+  const id = c.req.param('id')
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM purchases WHERE customer_id = ? ORDER BY purchased_at DESC, id DESC',
+  )
+    .bind(id)
+    .all<Purchase>()
+
+  return c.json(results)
+})
+
+app.post('/api/customers/:id/purchases', async (c) => {
+  const id = c.req.param('id')
+  const customer = await c.env.DB.prepare('SELECT id FROM customers WHERE id = ?').bind(id).first()
+  if (!customer) return c.json({ error: 'Cliente não encontrado' }, 404)
+
+  const body = normalizePurchase(await c.req.json<Partial<PurchaseInput>>())
+  if (!body.description) return c.json({ error: 'Descrição é obrigatória' }, 400)
+
+  const result = await c.env.DB.prepare(
+    `INSERT INTO purchases (customer_id, description, amount, purchased_at, notes)
+     VALUES (?1, ?2, ?3, ?4, ?5)`,
+  )
+    .bind(id, body.description, body.amount, body.purchased_at, body.notes)
+    .run()
+
+  const purchase = await c.env.DB.prepare('SELECT * FROM purchases WHERE id = ?')
+    .bind(result.meta.last_row_id)
+    .first<Purchase>()
+
+  return c.json(purchase, 201)
+})
+
+app.delete('/api/purchases/:id', async (c) => {
+  const id = c.req.param('id')
+  const { meta } = await c.env.DB.prepare('DELETE FROM purchases WHERE id = ?').bind(id).run()
+
+  if (meta.changes === 0) return c.json({ error: 'Compra não encontrada' }, 404)
   return c.body(null, 204)
 })
 
