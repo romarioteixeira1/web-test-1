@@ -11,7 +11,7 @@ type Props = {
 }
 
 const fieldClass =
-  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none focus:border-accent'
+  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
 const labelClass = 'flex flex-col gap-1 text-left text-sm'
 
 export function CustomerFormModal({
@@ -34,8 +34,8 @@ export function CustomerFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-lg">
+    <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
+      <div className="animate-scale-in max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
         <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -185,14 +185,14 @@ export function CustomerFormModal({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface"
+              className="rounded-md border border-border px-4 py-2 text-sm transition-all hover:bg-surface active:scale-95"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60 disabled:active:scale-100"
             >
               {submitting ? 'Salvando...' : 'Salvar'}
             </button>

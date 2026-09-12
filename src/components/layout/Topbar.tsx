@@ -47,7 +47,7 @@ export function Topbar({ onOpenSidebar }: Props) {
       <button
         type="button"
         onClick={onOpenSidebar}
-        className="rounded-md p-2 hover:bg-surface md:hidden"
+        className="rounded-md p-2 transition-colors hover:bg-surface hover:text-accent md:hidden"
         aria-label="Abrir menu"
       >
         <IconMenu className="size-5" />
@@ -62,7 +62,7 @@ export function Topbar({ onOpenSidebar }: Props) {
             onChange={(e) => setTerm(e.target.value)}
             type="search"
             placeholder="Buscar por nome, CPF/CNPJ..."
-            className="w-full rounded-md border border-border bg-surface py-2 pr-3 pl-9 text-sm outline-none focus:border-accent"
+            className="w-full rounded-md border border-border bg-surface py-2 pr-3 pl-9 text-sm outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </label>
       </form>

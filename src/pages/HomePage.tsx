@@ -44,7 +44,7 @@ export function HomePage() {
         <Link
           to="/clientes"
           state={{ openCreate: true }}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
         >
           Novo cadastro
         </Link>
@@ -56,7 +56,7 @@ export function HomePage() {
       {stats && (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5">
+            <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
                 <IconUsers className="size-6" />
               </span>
@@ -65,11 +65,11 @@ export function HomePage() {
                 <p className="mt-1 text-3xl font-semibold text-text-strong">{stats.total}</p>
               </div>
             </div>
-            <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
               <p className="text-sm">Clientes ativos</p>
-              <p className="mt-1 text-3xl font-semibold text-emerald-500">{stats.active}</p>
+              <p className="mt-1 text-3xl font-semibold text-accent">{stats.active}</p>
             </div>
-            <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
               <p className="text-sm">Clientes inativos</p>
               <p className="mt-1 text-3xl font-semibold text-red-500">{stats.inactive}</p>
             </div>
@@ -78,7 +78,7 @@ export function HomePage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium text-text-strong">Cadastros recentes</h2>
-              <Link to="/clientes" className="text-sm text-accent hover:underline">
+              <Link to="/clientes" className="text-sm font-medium text-accent transition-colors hover:text-accent-strong hover:underline">
                 Ver todos
               </Link>
             </div>
@@ -98,14 +98,14 @@ export function HomePage() {
                   </thead>
                   <tbody>
                     {stats.recent.map((customer) => (
-                      <tr key={customer.id} className="border-t border-border">
+                      <tr key={customer.id} className="border-t border-border transition-colors hover:bg-surface">
                         <td className="px-4 py-3 text-text-strong">{customer.name}</td>
                         <td className="px-4 py-3">{customer.email || customer.phone || '—'}</td>
                         <td className="px-4 py-3">
                           <span
                             className={
                               customer.status === 'active'
-                                ? 'rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-500'
+                                ? 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent'
                                 : 'rounded-full bg-red-500/15 px-2 py-1 text-xs font-medium text-red-500'
                             }
                           >

@@ -73,7 +73,7 @@ export function CustomersPage() {
         <button
           type="button"
           onClick={() => setModal({ mode: 'create' })}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
         >
           Novo cliente
         </button>

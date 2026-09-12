@@ -34,9 +34,9 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
         </thead>
         <tbody>
           {customers.map((customer) => (
-            <tr key={customer.id} className="border-t border-border">
+            <tr key={customer.id} className="border-t border-border transition-colors hover:bg-surface">
               <td className="px-4 py-3 text-text-strong">
-                <Link to={`/clientes/${customer.id}`} className="hover:text-accent hover:underline">
+                <Link to={`/clientes/${customer.id}`} className="transition-colors hover:text-accent hover:underline">
                   {customer.name}
                 </Link>
               </td>
@@ -52,7 +52,7 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
                 <span
                   className={
                     customer.status === 'active'
-                      ? 'rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-500'
+                      ? 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent'
                       : 'rounded-full bg-red-500/15 px-2 py-1 text-xs font-medium text-red-500'
                   }
                 >
@@ -61,20 +61,20 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.created_at)}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
-                <Link to={`/clientes/${customer.id}`} className="mr-3 hover:text-accent">
+                <Link to={`/clientes/${customer.id}`} className="mr-3 font-medium transition-colors hover:text-accent">
                   Compras
                 </Link>
                 <button
                   type="button"
                   onClick={() => onEdit(customer)}
-                  className="mr-3 hover:text-accent"
+                  className="mr-3 font-medium transition-colors hover:text-accent"
                 >
                   Editar
                 </button>
                 <button
                   type="button"
                   onClick={() => onDelete(customer)}
-                  className="hover:text-red-500"
+                  className="font-medium transition-colors hover:text-red-500"
                 >
                   Excluir
                 </button>

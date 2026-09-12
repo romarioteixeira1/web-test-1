@@ -99,7 +99,7 @@ export function CustomerDetailPage() {
   return (
     <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex flex-col gap-1">
-        <Link to="/clientes" className="text-sm text-accent hover:underline">
+        <Link to="/clientes" className="text-sm text-accent transition-colors hover:text-accent-strong hover:underline">
           ← Voltar para clientes
         </Link>
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -113,7 +113,7 @@ export function CustomerDetailPage() {
           <span
             className={
               customer.status === 'active'
-                ? 'rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-500'
+                ? 'rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent'
                 : 'rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-500'
             }
           >
@@ -123,13 +123,13 @@ export function CustomerDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-5">
+        <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
           <p className="text-sm">Total de compras</p>
           <p className="mt-1 text-3xl font-semibold text-text-strong">{purchases.length}</p>
         </div>
-        <div className="rounded-lg border border-border bg-surface p-5">
+        <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
           <p className="text-sm">Valor total gasto</p>
-          <p className="mt-1 text-3xl font-semibold text-emerald-500">{formatCurrency(total)}</p>
+          <p className="mt-1 text-3xl font-semibold text-accent">{formatCurrency(total)}</p>
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export function CustomerDetailPage() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
           >
             Nova compra
           </button>
@@ -161,16 +161,16 @@ export function CustomerDetailPage() {
               </thead>
               <tbody>
                 {purchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-t border-border">
+                  <tr key={purchase.id} className="border-t border-border transition-colors hover:bg-surface">
                     <td className="px-4 py-3 text-text-strong">{purchase.description}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatCurrency(purchase.amount)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-accent font-medium">{formatCurrency(purchase.amount)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{formatDateOnly(purchase.purchased_at)}</td>
                     <td className="px-4 py-3">{purchase.notes || '—'}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => handleDeletePurchase(purchase)}
-                        className="hover:text-red-500"
+                        className="font-medium transition-colors hover:text-red-500"
                       >
                         Excluir
                       </button>
