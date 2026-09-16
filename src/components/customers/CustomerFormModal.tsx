@@ -1,6 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { emptyCustomerInput, type CustomerInput } from '../../../shared/customer'
 
+const relationshipOptions: { value: CustomerInput['relationship_type']; label: string }[] = [
+  { value: 'comprador', label: 'Comprador' },
+  { value: 'fornecedor', label: 'Fornecedor' },
+  { value: 'ambos', label: 'Ambos' },
+]
+
+const paymentMethodOptions: { value: NonNullable<CustomerInput['payment_method']>; label: string }[] = [
+  { value: 'pix', label: 'Pix' },
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'transferencia', label: 'Transferência' },
+]
+
 type Props = {
   title: string
   initialValue?: CustomerInput
@@ -33,6 +45,8 @@ export function CustomerFormModal({
     onSubmit(form)
   }
 
+  const isJuridica = form.person_type === 'juridica'
+
   return (
     <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
       <div className="animate-scale-in max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
@@ -63,9 +77,75 @@ export function CustomerFormModal({
             </label>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <label className={labelClass}>
+              Tipo de pessoa
+              <select
+                className={fieldClass}
+                value={form.person_type}
+                onChange={(e) => set('person_type', e.target.value as CustomerInput['person_type'])}
+              >
+                <option value="fisica">Pessoa física</option>
+                <option value="juridica">Pessoa jurídica</option>
+              </select>
+            </label>
+            <label className={labelClass}>
+              Tipo de relação
+              <select
+                className={fieldClass}
+                value={form.relationship_type}
+                onChange={(e) => set('relationship_type', e.target.value as CustomerInput['relationship_type'])}
+              >
+                {relationshipOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Forma de pagamento preferida
+              <select
+                className={fieldClass}
+                value={form.payment_method ?? ''}
+                onChange={(e) =>
+                  set('payment_method', (e.target.value || null) as CustomerInput['payment_method'])
+                }
+              >
+                <option value="">Não informado</option>
+                {paymentMethodOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {isJuridica && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+              <label className={labelClass}>
+                Razão social
+                <input
+                  className={fieldClass}
+                  value={form.company_name ?? ''}
+                  onChange={(e) => set('company_name', e.target.value)}
+                />
+              </label>
+              <label className={labelClass}>
+                Inscrição estadual
+                <input
+                  className={fieldClass}
+                  value={form.state_registration ?? ''}
+                  onChange={(e) => set('state_registration', e.target.value)}
+                />
+              </label>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className={labelClass}>
-              CPF / CNPJ
+              {isJuridica ? 'CNPJ' : 'CPF'}
               <input
                 className={fieldClass}
                 value={form.document ?? ''}

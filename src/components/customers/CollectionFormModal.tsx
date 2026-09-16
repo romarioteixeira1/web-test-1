@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { emptyCollectionInput, materialTypes, type CollectionInput } from '../../../shared/collection'
 
 type Props = {
+  title?: string
+  initialValue?: CollectionInput
   submitting?: boolean
   error?: string | null
   onSubmit: (input: CollectionInput) => void
@@ -12,10 +14,14 @@ const fieldClass =
   'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
 const labelClass = 'flex flex-col gap-1 text-left text-sm'
 
-export function CollectionFormModal({ submitting, error, onSubmit, onCancel }: Props) {
-  const [form, setForm] = useState<CollectionInput>(emptyCollectionInput)
-  const [amountText, setAmountText] = useState('')
-  const [weightText, setWeightText] = useState('')
+export function CollectionFormModal({ title, initialValue, submitting, error, onSubmit, onCancel }: Props) {
+  const [form, setForm] = useState<CollectionInput>(initialValue ?? emptyCollectionInput)
+  const [amountText, setAmountText] = useState(
+    initialValue ? initialValue.amount.toString().replace('.', ',') : '',
+  )
+  const [weightText, setWeightText] = useState(
+    initialValue?.weight_kg != null ? initialValue.weight_kg.toString().replace('.', ',') : '',
+  )
 
   function set<K extends keyof CollectionInput>(key: K, value: CollectionInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -35,7 +41,7 @@ export function CollectionFormModal({ submitting, error, onSubmit, onCancel }: P
   return (
     <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
       <div className="animate-scale-in w-full max-w-md rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">Nova coleta</h2>
+        <h2 className="mb-4 text-xl font-medium text-text-strong">{title ?? 'Nova coleta'}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <label className={labelClass}>

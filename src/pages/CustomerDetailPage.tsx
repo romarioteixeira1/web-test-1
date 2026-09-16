@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import * as api from '../api/customers'
 import { CollectionFormModal } from '../components/customers/CollectionFormModal'
-import type { Customer } from '../../shared/customer'
+import { paymentMethodLabels, relationshipTypeLabels, type Customer } from '../../shared/customer'
 import type { Collection, CollectionInput } from '../../shared/collection'
 
 function formatDateOnly(value: string) {
@@ -26,6 +26,8 @@ function formatWeight(value: number) {
   return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
 }
 
+type ModalState = { mode: 'create' } | { mode: 'edit'; collection: Collection } | null
+
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -35,9 +37,11 @@ export function CustomerDetailPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [modal, setModal] = useState<ModalState>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterType, setFilterType] = useState<'' | 'material' | 'servico'>('')
 
   async function load() {
     setLoading(true)
@@ -61,12 +65,16 @@ export function CustomerDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId])
 
-  async function handleCreateCollection(input: CollectionInput) {
+  async function handleSubmitCollection(input: CollectionInput) {
     setSubmitting(true)
     setFormError(null)
     try {
-      await api.createCollection(customerId, input)
-      setModalOpen(false)
+      if (modal?.mode === 'edit') {
+        await api.updateCollection(modal.collection.id, input)
+      } else {
+        await api.createCollection(customerId, input)
+      }
+      setModal(null)
       const collectionsData = await api.listCollections(customerId)
       setCollections(collectionsData)
     } catch (err) {
@@ -108,6 +116,14 @@ export function CustomerDetailPage() {
   const total = collections.reduce((sum, item) => sum + item.amount, 0)
   const totalWeight = collections.reduce((sum, item) => sum + (item.weight_kg ?? 0), 0)
 
+  const filteredCollections = collections.filter((item) => {
+    if (filterType && item.type !== filterType) return false
+    const q = filterQuery.trim().toLowerCase()
+    if (!q) return true
+    const haystack = [item.description, item.material_type, item.notes].filter(Boolean).join(' ').toLowerCase()
+    return haystack.includes(q)
+  })
+
   return (
     <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex flex-col gap-1">
@@ -117,10 +133,29 @@ export function CustomerDetailPage() {
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-2xl font-medium text-text-strong">{customer.name}</h2>
+            {customer.person_type === 'juridica' && customer.company_name && (
+              <p className="text-sm">{customer.company_name}</p>
+            )}
             <p className="text-sm">
               {customer.email || '—'} {customer.phone ? `· ${customer.phone}` : ''}
               {customer.document ? ` · ${customer.document}` : ''}
+              {customer.person_type === 'juridica' && customer.state_registration
+                ? ` · IE ${customer.state_registration}`
+                : ''}
             </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
+                {relationshipTypeLabels[customer.relationship_type]}
+              </span>
+              <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
+                {customer.person_type === 'juridica' ? 'Pessoa jurídica' : 'Pessoa física'}
+              </span>
+              {customer.payment_method && (
+                <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
+                  Pagamento: {paymentMethodLabels[customer.payment_method]}
+                </span>
+              )}
+            </div>
           </div>
           <span
             className={
@@ -150,19 +185,42 @@ export function CustomerDetailPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <h3 className="text-lg font-medium text-text-strong">Coletas</h3>
           <button
             type="button"
-            onClick={() => setModalOpen(true)}
+            onClick={() => setModal({ mode: 'create' })}
             className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
           >
             Nova coleta
           </button>
         </div>
 
+        {collections.length > 0 && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              type="search"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Buscar por descrição, material ou observações..."
+              className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20 sm:max-w-xs"
+            />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+              className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20 sm:w-48"
+            >
+              <option value="">Todos os tipos</option>
+              <option value="material">Material</option>
+              <option value="servico">Serviço</option>
+            </select>
+          </div>
+        )}
+
         {collections.length === 0 ? (
           <p className="py-6 text-center text-sm">Nenhuma coleta registrada ainda.</p>
+        ) : filteredCollections.length === 0 ? (
+          <p className="py-6 text-center text-sm">Nenhuma coleta encontrada com esse filtro.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full min-w-[900px] text-left text-sm">
@@ -179,7 +237,7 @@ export function CustomerDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {collections.map((item) => (
+                {filteredCollections.map((item) => (
                   <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface">
                     <td className="px-4 py-3 text-text-strong">{item.description}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -207,6 +265,13 @@ export function CustomerDetailPage() {
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button
                         type="button"
+                        onClick={() => setModal({ mode: 'edit', collection: item })}
+                        className="mr-3 font-medium transition-colors hover:text-accent"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteCollection(item)}
                         className="font-medium transition-colors hover:text-red-500"
                       >
@@ -221,13 +286,15 @@ export function CustomerDetailPage() {
         )}
       </div>
 
-      {modalOpen && (
+      {modal && (
         <CollectionFormModal
+          title={modal.mode === 'edit' ? 'Editar coleta' : 'Nova coleta'}
+          initialValue={modal.mode === 'edit' ? modal.collection : undefined}
           submitting={submitting}
           error={formError}
-          onSubmit={handleCreateCollection}
+          onSubmit={handleSubmitCollection}
           onCancel={() => {
-            setModalOpen(false)
+            setModal(null)
             setFormError(null)
           }}
         />

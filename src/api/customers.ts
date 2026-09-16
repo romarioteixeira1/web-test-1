@@ -58,6 +58,13 @@ export function createCollection(customerId: number, input: CollectionInput) {
   })
 }
 
+export function updateCollection(id: number, input: CollectionInput) {
+  return request<Collection>(`/api/collections/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
 export function deleteCollection(id: number) {
   return request<void>(`/api/collections/${id}`, { method: 'DELETE' })
 }

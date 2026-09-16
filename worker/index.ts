@@ -1,5 +1,12 @@
 import { Hono } from 'hono'
-import type { Customer, CustomerInput, CustomerStats, CustomerStatus } from '../shared/customer'
+import type {
+  Customer,
+  CustomerInput,
+  CustomerStats,
+  CustomerStatus,
+  PersonType,
+  RelationshipType,
+} from '../shared/customer'
 import type { Collection, CollectionInput, CollectionType } from '../shared/collection'
 
 type Bindings = {
@@ -10,6 +17,16 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 function normalize(body: Partial<CustomerInput>): Omit<CustomerInput, 'name'> & { name: string } {
   const status: CustomerStatus = body.status === 'inactive' ? 'inactive' : 'active'
+  const person_type: PersonType = body.person_type === 'juridica' ? 'juridica' : 'fisica'
+  const relationship_type: RelationshipType =
+    body.relationship_type === 'fornecedor' || body.relationship_type === 'ambos'
+      ? body.relationship_type
+      : 'comprador'
+  const payment_method =
+    body.payment_method === 'pix' || body.payment_method === 'dinheiro' || body.payment_method === 'transferencia'
+      ? body.payment_method
+      : null
+
   return {
     name: body.name?.trim() ?? '',
     document: body.document?.trim() || null,
@@ -25,6 +42,11 @@ function normalize(body: Partial<CustomerInput>): Omit<CustomerInput, 'name'> & 
     zip_code: body.zip_code?.trim() || null,
     notes: body.notes?.trim() || null,
     status,
+    person_type,
+    company_name: person_type === 'juridica' ? body.company_name?.trim() || null : null,
+    state_registration: person_type === 'juridica' ? body.state_registration?.trim() || null : null,
+    relationship_type,
+    payment_method,
   }
 }
 
@@ -78,8 +100,9 @@ app.post('/api/customers', async (c) => {
 
   const result = await c.env.DB.prepare(
     `INSERT INTO customers
-       (name, document, birth_date, phone, email, street, number, complement, neighborhood, city, state, zip_code, notes, status)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+       (name, document, birth_date, phone, email, street, number, complement, neighborhood, city, state, zip_code,
+        notes, status, person_type, company_name, state_registration, relationship_type, payment_method)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)`,
   )
     .bind(
       body.name,
@@ -96,6 +119,11 @@ app.post('/api/customers', async (c) => {
       body.zip_code,
       body.notes,
       body.status,
+      body.person_type,
+      body.company_name,
+      body.state_registration,
+      body.relationship_type,
+      body.payment_method,
     )
     .run()
 
@@ -115,8 +143,9 @@ app.put('/api/customers/:id', async (c) => {
     `UPDATE customers
      SET name = ?1, document = ?2, birth_date = ?3, phone = ?4, email = ?5, street = ?6,
          number = ?7, complement = ?8, neighborhood = ?9, city = ?10, state = ?11,
-         zip_code = ?12, notes = ?13, status = ?14, updated_at = datetime('now')
-     WHERE id = ?15`,
+         zip_code = ?12, notes = ?13, status = ?14, person_type = ?15, company_name = ?16,
+         state_registration = ?17, relationship_type = ?18, payment_method = ?19, updated_at = datetime('now')
+     WHERE id = ?20`,
   )
     .bind(
       body.name,
@@ -133,6 +162,11 @@ app.put('/api/customers/:id', async (c) => {
       body.zip_code,
       body.notes,
       body.status,
+      body.person_type,
+      body.company_name,
+      body.state_registration,
+      body.relationship_type,
+      body.payment_method,
       id,
     )
     .run()
@@ -210,6 +244,39 @@ app.post('/api/customers/:id/collections', async (c) => {
     .first<Collection>()
 
   return c.json(collection, 201)
+})
+
+app.put('/api/collections/:id', async (c) => {
+  const id = c.req.param('id')
+  const body = normalizeCollection(await c.req.json<Partial<CollectionInput>>())
+  if (!body.description) return c.json({ error: 'Descrição é obrigatória' }, 400)
+
+  const { meta } = await c.env.DB.prepare(
+    `UPDATE collections
+     SET type = ?1, material_type = ?2, weight_kg = ?3, description = ?4, amount = ?5,
+         collected_at = ?6, scheduled_at = ?7, notes = ?8
+     WHERE id = ?9`,
+  )
+    .bind(
+      body.type,
+      body.material_type,
+      body.weight_kg,
+      body.description,
+      body.amount,
+      body.collected_at,
+      body.scheduled_at,
+      body.notes,
+      id,
+    )
+    .run()
+
+  if (meta.changes === 0) return c.json({ error: 'Coleta não encontrada' }, 404)
+
+  const collection = await c.env.DB.prepare('SELECT * FROM collections WHERE id = ?')
+    .bind(id)
+    .first<Collection>()
+
+  return c.json(collection)
 })
 
 app.delete('/api/collections/:id', async (c) => {

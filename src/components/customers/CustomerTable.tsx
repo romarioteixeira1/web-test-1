@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import type { Customer } from '../../../shared/customer'
+import { paymentMethodLabels, relationshipTypeLabels, type Customer } from '../../../shared/customer'
 
 type Props = {
   customers: Customer[]
@@ -20,12 +20,14 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[860px] text-left text-sm">
+      <table className="w-full min-w-[1080px] text-left text-sm">
         <thead className="bg-surface text-text-strong">
           <tr>
             <th className="px-4 py-3 font-medium">Nome</th>
             <th className="px-4 py-3 font-medium">Contato</th>
             <th className="px-4 py-3 font-medium">Documento</th>
+            <th className="px-4 py-3 font-medium">Relação</th>
+            <th className="px-4 py-3 font-medium">Pagamento</th>
             <th className="px-4 py-3 font-medium">Cidade/UF</th>
             <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3 font-medium">Cadastro</th>
@@ -45,6 +47,14 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
                 <div>{customer.phone || ''}</div>
               </td>
               <td className="px-4 py-3">{customer.document || '—'}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span className="rounded-full bg-surface px-2 py-1 text-xs font-medium text-text-strong">
+                  {relationshipTypeLabels[customer.relationship_type]}
+                </span>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                {customer.payment_method ? paymentMethodLabels[customer.payment_method] : '—'}
+              </td>
               <td className="px-4 py-3">
                 {customer.city ? `${customer.city}${customer.state ? `/${customer.state}` : ''}` : '—'}
               </td>
