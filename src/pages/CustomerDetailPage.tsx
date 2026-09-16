@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import * as api from '../api/customers'
-import { PurchaseFormModal } from '../components/customers/PurchaseFormModal'
+import { CollectionFormModal } from '../components/customers/CollectionFormModal'
 import type { Customer } from '../../shared/customer'
-import type { Purchase, PurchaseInput } from '../../shared/purchase'
+import type { Collection, CollectionInput } from '../../shared/collection'
 
 function formatDateOnly(value: string) {
   const [year, month, day] = value.split('-')
@@ -11,8 +11,19 @@ function formatDateOnly(value: string) {
   return `${day}/${month}/${year}`
 }
 
+function formatDateTime(value: string | null) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatWeight(value: number) {
+  return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg`
 }
 
 export function CustomerDetailPage() {
@@ -21,7 +32,7 @@ export function CustomerDetailPage() {
   const customerId = Number(id)
 
   const [customer, setCustomer] = useState<Customer | null>(null)
-  const [purchases, setPurchases] = useState<Purchase[]>([])
+  const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -32,12 +43,12 @@ export function CustomerDetailPage() {
     setLoading(true)
     setLoadError(null)
     try {
-      const [customerData, purchasesData] = await Promise.all([
+      const [customerData, collectionsData] = await Promise.all([
         api.getCustomer(customerId),
-        api.listPurchases(customerId),
+        api.listCollections(customerId),
       ])
       setCustomer(customerData)
-      setPurchases(purchasesData)
+      setCollections(collectionsData)
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Falha ao carregar cliente')
     } finally {
@@ -50,25 +61,25 @@ export function CustomerDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId])
 
-  async function handleCreatePurchase(input: PurchaseInput) {
+  async function handleCreateCollection(input: CollectionInput) {
     setSubmitting(true)
     setFormError(null)
     try {
-      await api.createPurchase(customerId, input)
+      await api.createCollection(customerId, input)
       setModalOpen(false)
-      const purchasesData = await api.listPurchases(customerId)
-      setPurchases(purchasesData)
+      const collectionsData = await api.listCollections(customerId)
+      setCollections(collectionsData)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Falha ao salvar compra')
+      setFormError(err instanceof Error ? err.message : 'Falha ao salvar coleta')
     } finally {
       setSubmitting(false)
     }
   }
 
-  async function handleDeletePurchase(purchase: Purchase) {
-    if (!window.confirm(`Excluir a compra "${purchase.description}"?`)) return
-    await api.deletePurchase(purchase.id)
-    setPurchases((list) => list.filter((p) => p.id !== purchase.id))
+  async function handleDeleteCollection(collection: Collection) {
+    if (!window.confirm(`Excluir a coleta "${collection.description}"?`)) return
+    await api.deleteCollection(collection.id)
+    setCollections((list) => list.filter((c) => c.id !== collection.id))
   }
 
   if (loading) {
@@ -94,7 +105,8 @@ export function CustomerDetailPage() {
     )
   }
 
-  const total = purchases.reduce((sum, p) => sum + p.amount, 0)
+  const total = collections.reduce((sum, item) => sum + item.amount, 0)
+  const totalWeight = collections.reduce((sum, item) => sum + (item.weight_kg ?? 0), 0)
 
   return (
     <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -122,54 +134,80 @@ export function CustomerDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
-          <p className="text-sm">Total de compras</p>
-          <p className="mt-1 text-3xl font-semibold text-text-strong">{purchases.length}</p>
+          <p className="text-sm">Total de coletas</p>
+          <p className="mt-1 text-3xl font-semibold text-text-strong">{collections.length}</p>
         </div>
         <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
-          <p className="text-sm">Valor total gasto</p>
+          <p className="text-sm">Peso total coletado</p>
+          <p className="mt-1 text-3xl font-semibold text-accent">{formatWeight(totalWeight)}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
+          <p className="text-sm">Valor total movimentado</p>
           <p className="mt-1 text-3xl font-semibold text-accent">{formatCurrency(total)}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-text-strong">Compras</h3>
+          <h3 className="text-lg font-medium text-text-strong">Coletas</h3>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
           >
-            Nova compra
+            Nova coleta
           </button>
         </div>
 
-        {purchases.length === 0 ? (
-          <p className="py-6 text-center text-sm">Nenhuma compra registrada ainda.</p>
+        {collections.length === 0 ? (
+          <p className="py-6 text-center text-sm">Nenhuma coleta registrada ainda.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-surface text-text-strong">
                 <tr>
                   <th className="px-4 py-3 font-medium">Descrição</th>
+                  <th className="px-4 py-3 font-medium">Tipo</th>
+                  <th className="px-4 py-3 font-medium">Material</th>
                   <th className="px-4 py-3 font-medium">Valor</th>
                   <th className="px-4 py-3 font-medium">Data</th>
+                  <th className="px-4 py-3 font-medium">Agendamento</th>
                   <th className="px-4 py-3 font-medium">Observações</th>
                   <th className="px-4 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
-                {purchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-t border-border transition-colors hover:bg-surface">
-                    <td className="px-4 py-3 text-text-strong">{purchase.description}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-accent font-medium">{formatCurrency(purchase.amount)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDateOnly(purchase.purchased_at)}</td>
-                    <td className="px-4 py-3">{purchase.notes || '—'}</td>
+                {collections.map((item) => (
+                  <tr key={item.id} className="border-t border-border transition-colors hover:bg-surface">
+                    <td className="px-4 py-3 text-text-strong">{item.description}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={
+                          item.type === 'material'
+                            ? 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent'
+                            : 'rounded-full bg-surface px-2 py-1 text-xs font-medium text-text-strong'
+                        }
+                      >
+                        {item.type === 'material' ? 'Material' : 'Serviço'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {item.type === 'material'
+                        ? [item.material_type, item.weight_kg != null ? formatWeight(item.weight_kg) : null]
+                            .filter(Boolean)
+                            .join(' · ') || '—'
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap font-medium text-accent">{formatCurrency(item.amount)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDateOnly(item.collected_at)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(item.scheduled_at)}</td>
+                    <td className="px-4 py-3">{item.notes || '—'}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => handleDeletePurchase(purchase)}
+                        onClick={() => handleDeleteCollection(item)}
                         className="font-medium transition-colors hover:text-red-500"
                       >
                         Excluir
@@ -184,10 +222,10 @@ export function CustomerDetailPage() {
       </div>
 
       {modalOpen && (
-        <PurchaseFormModal
+        <CollectionFormModal
           submitting={submitting}
           error={formError}
-          onSubmit={handleCreatePurchase}
+          onSubmit={handleCreateCollection}
           onCancel={() => {
             setModalOpen(false)
             setFormError(null)

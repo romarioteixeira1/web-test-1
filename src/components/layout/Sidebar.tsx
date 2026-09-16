@@ -24,10 +24,10 @@ export function Sidebar({ open, onNavigate }: Props) {
       >
         <div className="flex items-center gap-3 border-b border-border px-5 py-5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white shadow-sm shadow-accent/30">
-            RJL
+            BW
           </span>
           <div className="leading-tight">
-            <p className="text-sm font-semibold text-text-strong">RJL Semi Joias</p>
+            <p className="text-sm font-semibold text-text-strong">BEST WAY</p>
             <p className="text-xs text-text">Painel administrativo</p>
           </div>
         </div>

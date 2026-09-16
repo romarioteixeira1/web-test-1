@@ -62,7 +62,7 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
               <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.created_at)}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
                 <Link to={`/clientes/${customer.id}`} className="mr-3 font-medium transition-colors hover:text-accent">
-                  Compras
+                  Coletas
                 </Link>
                 <button
                   type="button"

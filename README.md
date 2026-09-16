@@ -1,6 +1,6 @@
-# web-test-1
+# BEST WAY
 
-Aplicativo de cadastro de clientes (React + TypeScript no front-end, API em Cloudflare Worker, dados em D1), pronto para deploy na Cloudflare.
+Aplicativo de cadastro de clientes e coletas para uma empresa de reciclagem (React + TypeScript no front-end, API em Cloudflare Worker, dados em D1), pronto para deploy na Cloudflare.
 
 ## Stack
 
@@ -16,14 +16,15 @@ Aplicativo de cadastro de clientes (React + TypeScript no front-end, API em Clou
 
 ```
 src/
-  api/            cliente HTTP para a API de clientes
-  components/     componentes de UI (Header, Footer, formulário e tabela de clientes)
-  pages/          páginas (CustomersPage)
+  api/            cliente HTTP para a API de clientes e coletas
+  components/     componentes de UI (layout, formulário e tabela de clientes, formulário de coletas)
+  pages/          páginas (CustomersPage, CustomerDetailPage)
   styles/         tokens de design (theme.css) e estilos base (base.css)
 worker/
-  index.ts        API REST (Hono) — /api/customers (GET/POST/PUT/DELETE)
+  index.ts        API REST (Hono) — /api/customers e /api/customers/:id/collections (GET/POST/PUT/DELETE)
 shared/
-  customer.ts     tipos compartilhados entre front-end e Worker
+  customer.ts     tipos de cliente compartilhados entre front-end e Worker
+  collection.ts   tipos de coleta (compra de material reciclável ou serviço de coleta)
 migrations/       migrações SQL do banco D1
 wrangler.jsonc    configuração de deploy (Worker + static assets em modo SPA + binding do D1)
 ```
