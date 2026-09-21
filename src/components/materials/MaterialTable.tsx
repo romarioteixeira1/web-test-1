@@ -4,6 +4,7 @@ import { orderMaterialHierarchy, type MaterialWithPrice } from '../../../shared/
 type Props = {
   materials: MaterialWithPrice[]
   onEdit: (material: MaterialWithPrice) => void
+  onSetPrice: (material: MaterialWithPrice) => void
   onDelete: (material: MaterialWithPrice) => void
 }
 
@@ -12,7 +13,7 @@ function formatCurrency(value: number | null) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export function MaterialTable({ materials, onEdit, onDelete }: Props) {
+export function MaterialTable({ materials, onEdit, onSetPrice, onDelete }: Props) {
   if (materials.length === 0) {
     return <p className="py-12 text-center text-sm">Nenhum material cadastrado ainda.</p>
   }
@@ -60,6 +61,13 @@ export function MaterialTable({ materials, onEdit, onDelete }: Props) {
                 </span>
               </td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => onSetPrice(material)}
+                  className="mr-3 font-medium text-accent transition-colors hover:underline"
+                >
+                  {material.buy_price == null ? 'Definir preço' : 'Novo preço'}
+                </button>
                 <Link to={`/materiais/${material.id}`} className="mr-3 font-medium transition-colors hover:text-accent">
                   Histórico
                 </Link>

@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { emptyMaterialPriceInput, type MaterialPriceInput } from '../../../shared/material'
 
 type Props = {
+  title?: string
+  initialValue?: Partial<MaterialPriceInput>
   unit: string
   submitting?: boolean
   error?: string | null
@@ -13,8 +15,8 @@ const fieldClass =
   'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
 const labelClass = 'flex flex-col gap-1 text-left text-sm'
 
-export function PriceFormModal({ unit, submitting, error, onSubmit, onCancel }: Props) {
-  const [form, setForm] = useState<MaterialPriceInput>(emptyMaterialPriceInput)
+export function PriceFormModal({ title = 'Novo preço', initialValue, unit, submitting, error, onSubmit, onCancel }: Props) {
+  const [form, setForm] = useState<MaterialPriceInput>({ ...emptyMaterialPriceInput, ...initialValue })
 
   function set<K extends keyof MaterialPriceInput>(key: K, value: MaterialPriceInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -28,7 +30,7 @@ export function PriceFormModal({ unit, submitting, error, onSubmit, onCancel }: 
   return (
     <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
       <div className="animate-scale-in w-full max-w-md rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">Novo preço</h2>
+        <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

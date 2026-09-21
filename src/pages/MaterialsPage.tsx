@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import * as api from '../api/materials'
 import { MaterialFormModal } from '../components/materials/MaterialFormModal'
 import { MaterialTable } from '../components/materials/MaterialTable'
-import type { MaterialTypeInput, MaterialWithPrice } from '../../shared/material'
+import { PriceFormModal } from '../components/materials/PriceFormModal'
+import type { MaterialPriceInput, MaterialTypeInput, MaterialWithPrice } from '../../shared/material'
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; material: MaterialWithPrice } | null
 
@@ -11,6 +12,7 @@ export function MaterialsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
+  const [priceTarget, setPriceTarget] = useState<MaterialWithPrice | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -48,6 +50,21 @@ export function MaterialsPage() {
     }
   }
 
+  async function handleSubmitPrice(input: MaterialPriceInput) {
+    if (!priceTarget) return
+    setSubmitting(true)
+    setFormError(null)
+    try {
+      await api.createMaterialPrice(priceTarget.id, input)
+      setPriceTarget(null)
+      await load()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Falha ao salvar preço')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleDelete(material: MaterialWithPrice) {
     if (!window.confirm(`Excluir o material "${material.name}"? Isso também remove seus subtipos e histórico de preços.`))
       return
@@ -80,7 +97,27 @@ export function MaterialsPage() {
         <MaterialTable
           materials={materials}
           onEdit={(material) => setModal({ mode: 'edit', material })}
+          onSetPrice={(material) => setPriceTarget(material)}
           onDelete={handleDelete}
+        />
+      )}
+
+      {priceTarget && (
+        <PriceFormModal
+          title={`Preço — ${priceTarget.name}`}
+          unit={priceTarget.unit}
+          initialValue={
+            priceTarget.buy_price == null
+              ? undefined
+              : { buy_price: priceTarget.buy_price, sell_price: priceTarget.sell_price ?? 0 }
+          }
+          submitting={submitting}
+          error={formError}
+          onSubmit={handleSubmitPrice}
+          onCancel={() => {
+            setPriceTarget(null)
+            setFormError(null)
+          }}
         />
       )}
 
