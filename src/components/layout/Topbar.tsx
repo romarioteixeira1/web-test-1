@@ -43,7 +43,7 @@ export function Topbar({ onOpenSidebar }: Props) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-bg px-4 sm:px-6">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-bg px-4 sm:px-6 print:hidden">
       <button
         type="button"
         onClick={onOpenSidebar}

@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import * as api from '../api/customers'
+import * as materialsApi from '../api/materials'
+import * as transactionsApi from '../api/transactions'
 import { CollectionFormModal } from '../components/customers/CollectionFormModal'
+import { TransactionFormModal } from '../components/transactions/TransactionFormModal'
+import { TransactionTable } from '../components/transactions/TransactionTable'
 import { paymentMethodLabels, relationshipTypeLabels, type Customer } from '../../shared/customer'
 import type { Collection, CollectionInput } from '../../shared/collection'
+import type { MaterialWithPrice } from '../../shared/material'
+import type { TransactionInput, TransactionWithDetails } from '../../shared/transaction'
 
 function formatDateOnly(value: string) {
   const [year, month, day] = value.split('-')
@@ -27,6 +33,10 @@ function formatWeight(value: number) {
 }
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; collection: Collection } | null
+type TransactionModalState =
+  | { mode: 'create' }
+  | { mode: 'edit'; transaction: TransactionWithDetails }
+  | null
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -35,6 +45,8 @@ export function CustomerDetailPage() {
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [collections, setCollections] = useState<Collection[]>([])
+  const [transactions, setTransactions] = useState<TransactionWithDetails[]>([])
+  const [materials, setMaterials] = useState<MaterialWithPrice[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
@@ -42,22 +54,53 @@ export function CustomerDetailPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [filterQuery, setFilterQuery] = useState('')
   const [filterType, setFilterType] = useState<'' | 'material' | 'servico'>('')
+  const [transactionModal, setTransactionModal] = useState<TransactionModalState>(null)
+  const [transactionSubmitting, setTransactionSubmitting] = useState(false)
+  const [transactionFormError, setTransactionFormError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
     setLoadError(null)
     try {
-      const [customerData, collectionsData] = await Promise.all([
+      const [customerData, collectionsData, transactionsData, materialsData] = await Promise.all([
         api.getCustomer(customerId),
         api.listCollections(customerId),
+        transactionsApi.listTransactions({ customerId }),
+        materialsApi.listMaterials(),
       ])
       setCustomer(customerData)
       setCollections(collectionsData)
+      setTransactions(transactionsData)
+      setMaterials(materialsData)
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Falha ao carregar cliente')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSubmitTransaction(input: TransactionInput) {
+    setTransactionSubmitting(true)
+    setTransactionFormError(null)
+    try {
+      if (transactionModal?.mode === 'edit') {
+        await transactionsApi.updateTransaction(transactionModal.transaction.id, input)
+      } else {
+        await transactionsApi.createTransaction(input)
+      }
+      setTransactionModal(null)
+      setTransactions(await transactionsApi.listTransactions({ customerId }))
+    } catch (err) {
+      setTransactionFormError(err instanceof Error ? err.message : 'Falha ao salvar transação')
+    } finally {
+      setTransactionSubmitting(false)
+    }
+  }
+
+  async function handleDeleteTransaction(transaction: TransactionWithDetails) {
+    if (!window.confirm(`Excluir a transação de ${formatDateOnly(transaction.transacted_at)}?`)) return
+    await transactionsApi.deleteTransaction(transaction.id)
+    setTransactions((list) => list.filter((t) => t.id !== transaction.id))
   }
 
   useEffect(() => {
@@ -186,6 +229,27 @@ export function CustomerDetailPage() {
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <h3 className="text-lg font-medium text-text-strong">Transações</h3>
+          <button
+            type="button"
+            onClick={() => setTransactionModal({ mode: 'create' })}
+            disabled={materials.length === 0}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60"
+          >
+            Nova transação
+          </button>
+        </div>
+
+        <TransactionTable
+          transactions={transactions}
+          showCustomer={false}
+          onEdit={(transaction) => setTransactionModal({ mode: 'edit', transaction })}
+          onDelete={handleDeleteTransaction}
+        />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <h3 className="text-lg font-medium text-text-strong">Coletas</h3>
           <button
             type="button"
@@ -296,6 +360,23 @@ export function CustomerDetailPage() {
           onCancel={() => {
             setModal(null)
             setFormError(null)
+          }}
+        />
+      )}
+
+      {transactionModal && (
+        <TransactionFormModal
+          title={transactionModal.mode === 'edit' ? 'Editar transação' : 'Nova transação'}
+          initialValue={transactionModal.mode === 'edit' ? transactionModal.transaction : undefined}
+          customers={customer ? [customer] : []}
+          materials={materials}
+          lockCustomerId={customerId}
+          submitting={transactionSubmitting}
+          error={transactionFormError}
+          onSubmit={handleSubmitTransaction}
+          onCancel={() => {
+            setTransactionModal(null)
+            setTransactionFormError(null)
           }}
         />
       )}
