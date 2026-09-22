@@ -1,7 +1,7 @@
 export type CustomerStatus = 'active' | 'inactive'
 export type PersonType = 'fisica' | 'juridica'
 export type RelationshipType = 'fornecedor' | 'comprador' | 'ambos'
-export type PaymentMethod = 'pix' | 'dinheiro' | 'transferencia'
+export type PaymentMethod = 'pix' | 'dinheiro' | 'transferencia' | 'cartao_debito' | 'cartao_credito'
 
 export interface Customer {
   id: number
@@ -69,4 +69,6 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
   pix: 'Pix',
   dinheiro: 'Dinheiro',
   transferencia: 'Transferência',
+  cartao_debito: 'Cartão de débito',
+  cartao_credito: 'Cartão de crédito',
 }

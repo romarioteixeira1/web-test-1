@@ -33,6 +33,58 @@ export function IconUsers({ className }: IconProps) {
   )
 }
 
+export function IconRecycle({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M9.5 3.5 6.5 8.5m0 0-2-1m2 1-1 2M14.5 3.5l3 5m0 0 2-1m-2 1 1 2M6.5 20.5h4.2m0 0-1.5-1.7m1.5 1.7-1.5 1.7M17.5 20.5h-2.7m0 0 4-6.9m-4 6.9-2 3.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+export function IconReceipt({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M6 3.5h12v17l-2.25-1.5L13.5 20.5l-1.5-1.5-1.5 1.5-2.25-1.5L6 20.5v-17Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M9 8h6M9 11.5h6M9 15h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function IconTruck({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M3 6.5h10v9H3v-9ZM13 10.5h4.5l3 3v2H13v-5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <circle cx="7" cy="17.5" r="1.8" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="17" cy="17.5" r="1.8" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  )
+}
+
+export function IconChart({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M3.5 20.5h17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function IconMenu({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

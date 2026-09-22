@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { emptyCollectionInput, materialTypes, type CollectionInput } from '../../../shared/collection'
+import type { Customer } from '../../../shared/customer'
 
 type Props = {
   title?: string
   initialValue?: CollectionInput
+  customers?: Customer[]
+  lockCustomerId?: number
   submitting?: boolean
   error?: string | null
   onSubmit: (input: CollectionInput) => void
@@ -14,8 +17,19 @@ const fieldClass =
   'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
 const labelClass = 'flex flex-col gap-1 text-left text-sm'
 
-export function CollectionFormModal({ title, initialValue, submitting, error, onSubmit, onCancel }: Props) {
-  const [form, setForm] = useState<CollectionInput>(initialValue ?? emptyCollectionInput)
+export function CollectionFormModal({
+  title,
+  initialValue,
+  customers,
+  lockCustomerId,
+  submitting,
+  error,
+  onSubmit,
+  onCancel,
+}: Props) {
+  const [form, setForm] = useState<CollectionInput>(
+    initialValue ?? { ...emptyCollectionInput, customer_id: lockCustomerId ?? null },
+  )
   const [amountText, setAmountText] = useState(
     initialValue ? initialValue.amount.toString().replace('.', ',') : '',
   )
@@ -44,6 +58,26 @@ export function CollectionFormModal({ title, initialValue, submitting, error, on
         <h2 className="mb-4 text-xl font-medium text-text-strong">{title ?? 'Nova coleta'}</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {customers && (
+            <label className={labelClass}>
+              Cliente *
+              <select
+                className={fieldClass}
+                value={form.customer_id ?? ''}
+                onChange={(e) => set('customer_id', e.target.value ? Number(e.target.value) : null)}
+                required
+                disabled={Boolean(lockCustomerId)}
+              >
+                <option value="">Selecione um cliente</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <label className={labelClass}>
             Tipo
             <select

@@ -14,9 +14,16 @@ export interface Collection {
   created_at: string
 }
 
-export type CollectionInput = Omit<Collection, 'id' | 'customer_id' | 'created_at'>
+export type CollectionInput = Omit<Collection, 'id' | 'customer_id' | 'created_at'> & {
+  customer_id: number | null
+}
+
+export interface CollectionWithCustomer extends Collection {
+  customer_name: string
+}
 
 export const emptyCollectionInput: CollectionInput = {
+  customer_id: null,
   type: 'material',
   material_type: '',
   weight_kg: null,

@@ -11,6 +11,8 @@ const paymentMethodOptions: { value: NonNullable<CustomerInput['payment_method']
   { value: 'pix', label: 'Pix' },
   { value: 'dinheiro', label: 'Dinheiro' },
   { value: 'transferencia', label: 'Transferência' },
+  { value: 'cartao_debito', label: 'Cartão de débito' },
+  { value: 'cartao_credito', label: 'Cartão de crédito' },
 ]
 
 type Props = {

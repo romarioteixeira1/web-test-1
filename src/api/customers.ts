@@ -1,5 +1,4 @@
 import type { Customer, CustomerInput, CustomerStats } from '../../shared/customer'
-import type { Collection, CollectionInput } from '../../shared/collection'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -45,26 +44,4 @@ export function updateCustomer(id: number, input: CustomerInput) {
 
 export function deleteCustomer(id: number) {
   return request<void>(`/api/customers/${id}`, { method: 'DELETE' })
-}
-
-export function listCollections(customerId: number) {
-  return request<Collection[]>(`/api/customers/${customerId}/collections`)
-}
-
-export function createCollection(customerId: number, input: CollectionInput) {
-  return request<Collection>(`/api/customers/${customerId}/collections`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  })
-}
-
-export function updateCollection(id: number, input: CollectionInput) {
-  return request<Collection>(`/api/collections/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(input),
-  })
-}
-
-export function deleteCollection(id: number) {
-  return request<void>(`/api/collections/${id}`, { method: 'DELETE' })
 }

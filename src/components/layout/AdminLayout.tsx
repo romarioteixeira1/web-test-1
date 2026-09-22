@@ -10,11 +10,11 @@ export function AdminLayout({ children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="h-svh">
+    <div className="h-svh print:h-auto">
       <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
-      <div className="flex h-svh flex-col md:pl-64">
+      <div className="flex h-svh flex-col md:pl-64 print:h-auto print:pl-0">
         <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+        <main className="flex flex-1 flex-col overflow-y-auto print:overflow-visible">{children}</main>
       </div>
     </div>
   )

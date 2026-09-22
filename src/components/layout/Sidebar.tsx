@@ -18,7 +18,7 @@ export function Sidebar({ open, onNavigate }: Props) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col border-r border-border bg-surface transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col border-r border-border bg-surface transition-transform duration-200 md:translate-x-0 print:hidden ${
           open ? 'translate-x-0' : ''
         }`}
       >

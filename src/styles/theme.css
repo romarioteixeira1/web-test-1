@@ -15,6 +15,11 @@
   --color-accent: #16c172;
   --color-accent-strong: #0e9c5a;
   --color-accent-soft: #e2faec;
+
+  --color-report-compra: #2a78d6;
+  --color-report-venda: #1baf7a;
+  --color-report-positive: #2a78d6;
+  --color-report-negative: #e34948;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,5 +32,10 @@
     --color-accent: #22e07f;
     --color-accent-strong: #4df29a;
     --color-accent-soft: #0e2a1b;
+
+    --color-report-compra: #3987e5;
+    --color-report-venda: #199e70;
+    --color-report-positive: #3987e5;
+    --color-report-negative: #e66767;
   }
 }
