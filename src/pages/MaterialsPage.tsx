@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as api from '../api/materials'
 import { MaterialFormModal } from '../components/materials/MaterialFormModal'
 import { MaterialTable } from '../components/materials/MaterialTable'
-import type { MaterialTypeInput, MaterialWithPrice } from '../../shared/material'
+import type { MaterialPriceInput, MaterialTypeInput, MaterialWithPrice } from '../../shared/material'
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; material: MaterialWithPrice } | null
 
@@ -30,14 +30,14 @@ export function MaterialsPage() {
     load()
   }, [])
 
-  async function handleSubmit(input: MaterialTypeInput) {
+  async function handleSubmit(input: MaterialTypeInput, price: MaterialPriceInput | null) {
     setSubmitting(true)
     setFormError(null)
     try {
-      if (modal?.mode === 'edit') {
-        await api.updateMaterial(modal.material.id, input)
-      } else {
-        await api.createMaterial(input)
+      const material =
+        modal?.mode === 'edit' ? await api.updateMaterial(modal.material.id, input) : await api.createMaterial(input)
+      if (price) {
+        await api.createMaterialPrice(material.id, price)
       }
       setModal(null)
       await load()
@@ -54,9 +54,6 @@ export function MaterialsPage() {
     await api.deleteMaterial(material.id)
     await load()
   }
-
-  const parentOptions =
-    modal?.mode === 'edit' ? materials.filter((m) => m.id !== modal.material.id) : materials
 
   return (
     <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -88,7 +85,6 @@ export function MaterialsPage() {
         <MaterialFormModal
           title={modal.mode === 'edit' ? 'Editar material' : 'Novo material'}
           initialValue={modal.mode === 'edit' ? modal.material : undefined}
-          parentOptions={parentOptions}
           submitting={submitting}
           error={formError}
           onSubmit={handleSubmit}

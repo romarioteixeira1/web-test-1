@@ -1,13 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import { commonUnits, emptyMaterialTypeInput, type MaterialTypeInput, type MaterialWithPrice } from '../../../shared/material'
+import {
+  commonUnits,
+  emptyMaterialTypeInput,
+  type MaterialPriceInput,
+  type MaterialTypeInput,
+  type MaterialWithPrice,
+} from '../../../shared/material'
 
 type Props = {
   title: string
-  initialValue?: MaterialTypeInput
-  parentOptions: MaterialWithPrice[]
+  initialValue?: MaterialWithPrice
   submitting?: boolean
   error?: string | null
-  onSubmit: (input: MaterialTypeInput) => void
+  onSubmit: (input: MaterialTypeInput, price: MaterialPriceInput | null) => void
   onCancel: () => void
 }
 
@@ -15,17 +20,12 @@ const fieldClass =
   'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
 const labelClass = 'flex flex-col gap-1 text-left text-sm'
 
-export function MaterialFormModal({
-  title,
-  initialValue,
-  parentOptions,
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
-}: Props) {
+export function MaterialFormModal({ title, initialValue, submitting, error, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<MaterialTypeInput>(initialValue ?? emptyMaterialTypeInput)
   const [customUnit, setCustomUnit] = useState(!commonUnits.includes(form.unit))
+  const [buyPriceText, setBuyPriceText] = useState(initialValue?.buy_price?.toString() ?? '')
+  const [sellPriceText, setSellPriceText] = useState(initialValue?.sell_price?.toString() ?? '')
+  const [priceError, setPriceError] = useState<string | null>(null)
 
   function set<K extends keyof MaterialTypeInput>(key: K, value: MaterialTypeInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -33,7 +33,24 @@ export function MaterialFormModal({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    onSubmit(form)
+    setPriceError(null)
+
+    const hasBuy = buyPriceText.trim() !== ''
+    const hasSell = sellPriceText.trim() !== ''
+    if (hasBuy !== hasSell) {
+      setPriceError('Preencha os dois preços (compra e venda) ou deixe ambos em branco.')
+      return
+    }
+
+    const price: MaterialPriceInput | null = hasBuy
+      ? {
+          buy_price: Number(buyPriceText),
+          sell_price: Number(sellPriceText),
+          effective_at: new Date().toISOString().slice(0, 10),
+        }
+      : null
+
+    onSubmit(form, price)
   }
 
   return (
@@ -52,23 +69,6 @@ export function MaterialFormModal({
               autoFocus
               placeholder="Ex: Papelão, PET, Alumínio..."
             />
-          </label>
-
-          <label className={labelClass}>
-            Tipo (opcional)
-            <select
-              className={fieldClass}
-              value={form.parent_id ?? ''}
-              onChange={(e) => set('parent_id', e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">Nenhum (material de nível superior)</option>
-              {parentOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs">Selecione um tipo para cadastrar este material como subtipo dele.</span>
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -115,6 +115,35 @@ export function MaterialFormModal({
             </label>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Preço de compra (R$/{form.unit})
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className={fieldClass}
+                value={buyPriceText}
+                onChange={(e) => setBuyPriceText(e.target.value)}
+                placeholder="0,00"
+              />
+            </label>
+            <label className={labelClass}>
+              Preço de venda (R$/{form.unit})
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className={fieldClass}
+                value={sellPriceText}
+                onChange={(e) => setSellPriceText(e.target.value)}
+                placeholder="0,00"
+              />
+            </label>
+          </div>
+          <span className="-mt-2 text-xs">Preencha para registrar o preço vigente a partir de hoje.</span>
+
+          {priceError && <p className="text-sm text-red-500">{priceError}</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="mt-2 flex justify-end gap-3">
