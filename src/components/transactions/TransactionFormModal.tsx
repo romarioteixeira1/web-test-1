@@ -1,13 +1,22 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { orderMaterialHierarchy, type MaterialWithPrice } from '../../../shared/material'
+import type { PaymentMethodRecord } from '../../../shared/payment-method'
 import { emptyTransactionInput, type TransactionInput, type TransactionType } from '../../../shared/transaction'
-import type { Customer, PaymentMethod } from '../../../shared/customer'
+import type { Customer } from '../../../shared/customer'
+import { brl, parseDecimal, todayIso, toDecimalInput } from '../../lib/format'
+import { ChoiceGroup, Field, Modal } from '../ui/Modal'
+
+const typeOptions = [
+  ['compra', 'Compra'],
+  ['venda', 'Venda'],
+] as const
 
 type Props = {
-  title: string
+  mode: 'create' | 'edit'
   initialValue?: TransactionInput
   customers: Customer[]
   materials: MaterialWithPrice[]
+  paymentMethods: PaymentMethodRecord[]
   lockCustomerId?: number
   submitting?: boolean
   error?: string | null
@@ -15,19 +24,14 @@ type Props = {
   onCancel: () => void
 }
 
-const fieldClass =
-  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
-const labelClass = 'flex flex-col gap-1 text-left text-sm'
-
-function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+type Invalid = 'customer' | 'material' | 'weight' | 'price' | null
 
 export function TransactionFormModal({
-  title,
+  mode,
   initialValue,
   customers,
   materials,
+  paymentMethods,
   lockCustomerId,
   submitting,
   error,
@@ -35,11 +39,15 @@ export function TransactionFormModal({
   onCancel,
 }: Props) {
   const [form, setForm] = useState<TransactionInput>(
-    initialValue ?? { ...emptyTransactionInput, customer_id: lockCustomerId ?? null },
+    initialValue ?? { ...emptyTransactionInput, customer_id: lockCustomerId ?? null, transacted_at: todayIso() },
   )
+  const [weightText, setWeightText] = useState(initialValue ? String(initialValue.weight).replace('.', ',') : '')
+  const [priceText, setPriceText] = useState(initialValue ? toDecimalInput(initialValue.unit_price) : '')
+  const [invalid, setInvalid] = useState<Invalid>(null)
 
   function set<K extends keyof TransactionInput>(key: K, value: TransactionInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
+    setInvalid(null)
   }
 
   function priceFor(materialId: number, type: TransactionType) {
@@ -48,195 +56,202 @@ export function TransactionFormModal({
   }
 
   function handleMaterialChange(materialId: number) {
+    set('material_type_id', materialId)
     const price = priceFor(materialId, form.transaction_type)
-    setForm((f) => ({ ...f, material_type_id: materialId, unit_price: price ?? f.unit_price }))
+    if (price != null) setPriceText(toDecimalInput(price))
   }
 
   function handleTypeChange(type: TransactionType) {
+    set('transaction_type', type)
     const price = priceFor(form.material_type_id, type)
-    setForm((f) => ({ ...f, transaction_type: type, unit_price: price ?? f.unit_price }))
+    if (price != null) setPriceText(toDecimalInput(price))
   }
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    onSubmit(form)
-  }
-
-  const materialRows = orderMaterialHierarchy(materials)
+  const weight = parseDecimal(weightText)
+  const unitPrice = parseDecimal(priceText)
+  const total = (weight ?? 0) * (unitPrice ?? 0)
   const selectedMaterial = materials.find((m) => m.id === form.material_type_id)
-  const total = form.weight * form.unit_price
+  const materialRows = orderMaterialHierarchy(materials)
+  const usableMethods = paymentMethods.filter(
+    (m) =>
+      m.code === form.payment_method ||
+      (m.active && (form.transaction_type === 'compra' ? m.use_purchases : m.use_sales)),
+  )
+  // Same rule the worker uses to keep the installment count.
+  const showInstallments =
+    form.payment_status === 'parcelado' ||
+    form.payment_method === 'cartao_credito' ||
+    form.payment_method === 'cartao_debito'
+
+  function handleSubmit() {
+    const check: [Invalid, boolean, string][] = [
+      ['customer', !form.customer_id, 'transaction-customer'],
+      ['material', !form.material_type_id, 'transaction-material'],
+      ['weight', weight == null || weight <= 0, 'transaction-weight'],
+      ['price', unitPrice == null || unitPrice < 0, 'transaction-price'],
+    ]
+    const failed = check.find(([, bad]) => bad)
+    if (failed) {
+      setInvalid(failed[0])
+      document.getElementById(failed[2])?.focus()
+      return
+    }
+    onSubmit({ ...form, weight: weight!, unit_price: unitPrice! })
+  }
+
+  const invalidMessage: Record<Exclude<Invalid, null>, string> = {
+    customer: 'Escolha o cliente antes de salvar.',
+    material: 'Escolha o material antes de salvar.',
+    weight: 'Informe um peso maior que zero (ex.: 12,5).',
+    price: 'Informe um preço válido (ex.: 1,50).',
+  }
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="animate-scale-in max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
+    <Modal
+      title={mode === 'edit' ? 'Editar transação' : 'Nova transação'}
+      submitLabel={mode === 'edit' ? 'Salvar alterações' : 'Cadastrar'}
+      submitting={submitting}
+      error={invalid ? invalidMessage[invalid] : error}
+      wide
+      onSubmit={handleSubmit}
+      onClose={onCancel}
+    >
+      <ChoiceGroup label="Tipo de transação" value={form.transaction_type} options={typeOptions} onChange={handleTypeChange} />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
-            <label className={labelClass}>
-              Cliente *
-              <select
-                className={fieldClass}
-                value={form.customer_id ?? ''}
-                onChange={(e) => set('customer_id', e.target.value ? Number(e.target.value) : null)}
-                required
-                disabled={Boolean(lockCustomerId)}
-              >
-                <option value="">Selecione um cliente</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClass}>
-              Tipo *
-              <select
-                className={fieldClass}
-                value={form.transaction_type}
-                onChange={(e) => handleTypeChange(e.target.value as TransactionType)}
-              >
-                <option value="compra">Compra</option>
-                <option value="venda">Venda</option>
-              </select>
-            </label>
-          </div>
-
-          <label className={labelClass}>
-            Material *
-            <select
-              className={fieldClass}
-              value={form.material_type_id || ''}
-              onChange={(e) => handleMaterialChange(Number(e.target.value))}
-              required
-            >
-              <option value="">Selecione um material</option>
-              {materialRows.map(({ item, depth }) => (
-                <option key={item.id} value={item.id}>
-                  {'—'.repeat(depth)} {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <label className={labelClass}>
-              Peso {selectedMaterial ? `(${selectedMaterial.unit})` : ''} *
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={form.weight}
-                onChange={(e) => set('weight', Number(e.target.value))}
-                required
-              />
-            </label>
-            <label className={labelClass}>
-              Preço no momento (R$) *
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={form.unit_price}
-                onChange={(e) => set('unit_price', Number(e.target.value))}
-                required
-              />
-            </label>
-            <label className={labelClass}>
-              Valor total
-              <input className={fieldClass} value={formatCurrency(total || 0)} disabled />
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <label className={labelClass}>
-              Forma de pagamento
-              <select
-                className={fieldClass}
-                value={form.payment_method ?? ''}
-                onChange={(e) => set('payment_method', (e.target.value || null) as PaymentMethod | null)}
-              >
-                <option value="">Não informado</option>
-                <option value="pix">Pix</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="transferencia">Transferência</option>
-                <option value="cartao_debito">Cartão de débito</option>
-                <option value="cartao_credito">Cartão de crédito</option>
-              </select>
-            </label>
-            <label className={labelClass}>
-              Status de pagamento
-              <select
-                className={fieldClass}
-                value={form.payment_status}
-                onChange={(e) => set('payment_status', e.target.value as TransactionInput['payment_status'])}
-              >
-                <option value="a_pagar">A pagar</option>
-                <option value="pago">Pago</option>
-                <option value="parcelado">Parcelado</option>
-              </select>
-            </label>
-            <label className={labelClass}>
-              Data da transação *
-              <input
-                type="date"
-                className={fieldClass}
-                value={form.transacted_at}
-                onChange={(e) => set('transacted_at', e.target.value)}
-                required
-              />
-            </label>
-          </div>
-
-          {(form.payment_status === 'parcelado' ||
-            form.payment_method === 'cartao_credito' ||
-            form.payment_method === 'cartao_debito') && (
-            <label className={labelClass}>
-              Número de parcelas
-              <input
-                type="number"
-                min="2"
-                step="1"
-                className={`${fieldClass} sm:max-w-40`}
-                value={form.installments ?? ''}
-                onChange={(e) => set('installments', e.target.value ? Number(e.target.value) : null)}
-              />
-            </label>
-          )}
-
-          <label className={labelClass}>
-            Observações
-            <textarea
-              className={fieldClass}
-              rows={3}
-              value={form.notes ?? ''}
-              onChange={(e) => set('notes', e.target.value)}
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="mt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md border border-border px-4 py-2 text-sm transition-all hover:bg-surface active:scale-95"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60 disabled:active:scale-100"
-            >
-              {submitting ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Cliente *" htmlFor="transaction-customer">
+          <select
+            id="transaction-customer"
+            className={`inp ${invalid === 'customer' ? 'invalid' : ''}`}
+            value={form.customer_id ?? ''}
+            disabled={Boolean(lockCustomerId)}
+            onChange={(e) => set('customer_id', e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Selecione um cliente</option>
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Material *" htmlFor="transaction-material">
+          <select
+            id="transaction-material"
+            className={`inp ${invalid === 'material' ? 'invalid' : ''}`}
+            value={form.material_type_id || ''}
+            onChange={(e) => handleMaterialChange(Number(e.target.value))}
+          >
+            <option value="">Selecione um material</option>
+            {materialRows.map(({ item, depth }) => (
+              <option key={item.id} value={item.id}>
+                {'— '.repeat(depth)}
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </Field>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Field label={`Peso (${selectedMaterial?.unit ?? 'kg'}) *`} htmlFor="transaction-weight">
+          <input
+            id="transaction-weight"
+            className={`inp mono ${invalid === 'weight' ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,0"
+            value={weightText}
+            onChange={(e) => {
+              setWeightText(e.target.value)
+              setInvalid(null)
+            }}
+          />
+        </Field>
+        <Field label={`Preço (R$/${selectedMaterial?.unit ?? 'kg'}) *`} htmlFor="transaction-price">
+          <input
+            id="transaction-price"
+            className={`inp mono ${invalid === 'price' ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            value={priceText}
+            onChange={(e) => {
+              setPriceText(e.target.value)
+              setInvalid(null)
+            }}
+          />
+        </Field>
+        <Field label="Data *" htmlFor="transaction-date">
+          <input
+            id="transaction-date"
+            type="date"
+            className="inp"
+            value={form.transacted_at}
+            onChange={(e) => set('transacted_at', e.target.value)}
+          />
+        </Field>
+      </div>
+
+      <div className="margin-box">
+        <span className="lbl">Valor total</span>
+        <strong className="mono pos">{brl(total || 0)}</strong>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Field label="Forma de pagamento" htmlFor="transaction-method">
+          <select
+            id="transaction-method"
+            className="inp"
+            value={form.payment_method ?? ''}
+            onChange={(e) => set('payment_method', e.target.value || null)}
+          >
+            <option value="">Não informado</option>
+            {usableMethods.map((m) => (
+              <option key={m.code} value={m.code}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Status do pagamento" htmlFor="transaction-status">
+          <select
+            id="transaction-status"
+            className="inp"
+            value={form.payment_status}
+            onChange={(e) => set('payment_status', e.target.value as TransactionInput['payment_status'])}
+          >
+            <option value="a_pagar">A pagar</option>
+            <option value="pago">Pago</option>
+            <option value="parcelado">Parcelado</option>
+          </select>
+        </Field>
+        {showInstallments ? (
+          <Field label="Parcelas" htmlFor="transaction-installments">
+            <input
+              id="transaction-installments"
+              className="inp mono"
+              inputMode="numeric"
+              placeholder="1"
+              value={form.installments ?? ''}
+              onChange={(e) => {
+                const n = Number.parseInt(e.target.value.replace(/\D/g, ''), 10)
+                set('installments', Number.isFinite(n) && n > 0 ? n : null)
+              }}
+            />
+          </Field>
+        ) : (
+          <div />
+        )}
+      </div>
+
+      <Field label="Observações" htmlFor="transaction-notes">
+        <textarea
+          id="transaction-notes"
+          className="inp"
+          rows={2}
+          value={form.notes ?? ''}
+          onChange={(e) => set('notes', e.target.value)}
+        />
+      </Field>
+    </Modal>
   )
 }

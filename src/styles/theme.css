@@ -1,41 +1,54 @@
 /**
- * Design tokens. Each token becomes a Tailwind utility automatically
+ * EcoControl design tokens. Each token becomes a Tailwind utility automatically
  * (e.g. --color-accent -> bg-accent / text-accent / border-accent).
- * Keep this file as the single source of truth for the visual language.
+ *
+ * The palette is intentionally a single hue: green, in light and dark tones.
+ * Tailwind's default colors are cleared so nothing outside the palette can be
+ * used by accident. The only non-green color is `danger`, for errors and deletes.
  */
-@theme {
-  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, Consolas, monospace;
+@theme static {
+  --color-*: initial;
 
-  --color-bg: #ffffff;
-  --color-surface: #f5f7f5;
-  --color-border: #e1e5e1;
-  --color-text: #5a655e;
-  --color-text-strong: #06110a;
-  --color-accent: #16c172;
-  --color-accent-strong: #0e9c5a;
-  --color-accent-soft: #e2faec;
+  --font-sans: 'Geist', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, Consolas, monospace;
 
-  --color-report-compra: #2a78d6;
-  --color-report-venda: #1baf7a;
-  --color-report-positive: #2a78d6;
-  --color-report-negative: #e34948;
-}
+  --color-white: #ffffff;
+  --color-black: #000000;
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-bg: #070808;
-    --color-surface: #131513;
-    --color-border: #262b26;
-    --color-text: #98a59d;
-    --color-text-strong: #f5faf6;
-    --color-accent: #22e07f;
-    --color-accent-strong: #4df29a;
-    --color-accent-soft: #0e2a1b;
+  --color-green-900: #10301a;
+  --color-green-800: #185a1f;
+  --color-green-700: #1e6b2a;
+  --color-green-600: #237a2c;
+  --color-green-500: #2e9a30;
+  --color-green-400: #5dbb3a;
+  --color-green-300: #8fd16a;
+  --color-green-200: #d3eec4;
+  --color-green-100: #ddf2d6;
+  --color-green-50: #eef6ea;
 
-    --color-report-compra: #3987e5;
-    --color-report-venda: #199e70;
-    --color-report-positive: #3987e5;
-    --color-report-negative: #e66767;
-  }
+  --color-bg: #eef3ea;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f5f1;
+  --color-border: #d6dbd3;
+  --color-border-soft: #e6e9e3;
+  --color-ink: #16211b;
+  --color-ink-2: #3c4841;
+  --color-muted: #56615a;
+
+  --color-accent: #237a2c;
+  --color-accent-hover: #185a1f;
+  --color-accent-soft: #ddf2d6;
+  --color-accent-text: #1e6b2a;
+
+  --color-danger: #a8322a;
+  --color-danger-soft: #fbedec;
+
+  /* Chart series — two tones of the same green. */
+  --color-series-dark: #1e6b2a;
+  --color-series-light: #8fd16a;
+  --color-series-bar: #2e9a30;
+
+  --radius-card: 14px;
+  --radius-hero: 20px;
+  --radius-control: 10px;
 }

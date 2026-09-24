@@ -29,6 +29,7 @@ export type TransactionInput = Omit<
 
 export interface TransactionWithDetails extends Transaction {
   customer_name: string
+  payment_method_name: string | null
   material_name: string
   material_unit: string
 }

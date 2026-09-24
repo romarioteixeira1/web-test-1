@@ -9,19 +9,28 @@ import type {
   RelationshipType,
 } from '../shared/customer'
 import type { CollectionInput, CollectionType, CollectionWithCustomer } from '../shared/collection'
-import type {
-  MaterialPriceInput,
-  MaterialStatus,
-  MaterialTypeInput,
-  MaterialWithPrice,
+import {
+  materialCategories,
+  type MaterialPriceInput,
+  type MaterialStatus,
+  type MaterialTypeInput,
+  type MaterialWithPrice,
 } from '../shared/material'
+import type { PaymentKind, PaymentMethodInput, PaymentMethodRecord } from '../shared/payment-method'
 import type {
   PaymentStatus,
   TransactionInput,
   TransactionType,
   TransactionWithDetails,
 } from '../shared/transaction'
-import type { CustomerReportRow, MaterialReportRow, PeriodReportRow, ReportGranularity } from '../shared/report'
+import type {
+  CashFlowReport,
+  CashFlowRow,
+  CustomerReportRow,
+  MaterialReportRow,
+  PeriodReportRow,
+  ReportGranularity,
+} from '../shared/report'
 
 type Bindings = {
   DB: D1Database
@@ -29,7 +38,16 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-const paymentMethods: PaymentMethod[] = ['pix', 'dinheiro', 'transferencia', 'cartao_debito', 'cartao_credito']
+/** Returns the code only if it matches a registered payment method, so free text never reaches the database. */
+async function knownPaymentCode(db: D1Database, code: unknown): Promise<PaymentMethod | null> {
+  if (typeof code !== 'string' || !code.trim()) return null
+  const row = await db.prepare('SELECT code FROM payment_methods WHERE code = ?').bind(code.trim()).first<{ code: string }>()
+  return row?.code ?? null
+}
+
+async function withKnownPaymentCode<T extends { payment_method?: PaymentMethod | null }>(db: D1Database, body: T) {
+  return { ...body, payment_method: await knownPaymentCode(db, body.payment_method) }
+}
 
 function normalize(body: Partial<CustomerInput>): Omit<CustomerInput, 'name'> & { name: string } {
   const status: CustomerStatus = body.status === 'inactive' ? 'inactive' : 'active'
@@ -38,8 +56,7 @@ function normalize(body: Partial<CustomerInput>): Omit<CustomerInput, 'name'> & 
     body.relationship_type === 'fornecedor' || body.relationship_type === 'ambos'
       ? body.relationship_type
       : 'comprador'
-  const payment_method =
-    body.payment_method && paymentMethods.includes(body.payment_method) ? body.payment_method : null
+  const payment_method = body.payment_method || null
 
   return {
     name: body.name?.trim() ?? '',
@@ -109,7 +126,7 @@ app.get('/api/customers/:id', async (c) => {
 })
 
 app.post('/api/customers', async (c) => {
-  const body = normalize(await c.req.json<Partial<CustomerInput>>())
+  const body = normalize(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<CustomerInput>>()))
   if (!body.name) return c.json({ error: 'Nome é obrigatório' }, 400)
 
   const result = await c.env.DB.prepare(
@@ -150,7 +167,7 @@ app.post('/api/customers', async (c) => {
 
 app.put('/api/customers/:id', async (c) => {
   const id = c.req.param('id')
-  const body = normalize(await c.req.json<Partial<CustomerInput>>())
+  const body = normalize(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<CustomerInput>>()))
   if (!body.name) return c.json({ error: 'Nome é obrigatório' }, 400)
 
   const { meta } = await c.env.DB.prepare(
@@ -317,9 +334,11 @@ app.delete('/api/collections/:id', async (c) => {
 
 function normalizeMaterialType(body: Partial<MaterialTypeInput>): MaterialTypeInput {
   const status: MaterialStatus = body.status === 'inactive' ? 'inactive' : 'active'
+  const category = materialCategories.find((cat) => cat === body.category) ?? null
   return {
     parent_id: Number.isFinite(body.parent_id) ? Number(body.parent_id) : null,
     name: body.name?.trim() ?? '',
+    category,
     unit: body.unit?.trim() || 'kg',
     status,
   }
@@ -356,9 +375,9 @@ app.post('/api/materials', async (c) => {
   if (!body.name) return c.json({ error: 'Nome é obrigatório' }, 400)
 
   const result = await c.env.DB.prepare(
-    'INSERT INTO material_types (parent_id, name, unit, status) VALUES (?1, ?2, ?3, ?4)',
+    'INSERT INTO material_types (parent_id, name, category, unit, status) VALUES (?1, ?2, ?3, ?4, ?5)',
   )
-    .bind(body.parent_id, body.name, body.unit, body.status)
+    .bind(body.parent_id, body.name, body.category, body.unit, body.status)
     .run()
 
   const material = await c.env.DB.prepare(`${materialSelect} WHERE mt.id = ?`)
@@ -376,10 +395,10 @@ app.put('/api/materials/:id', async (c) => {
 
   const { meta } = await c.env.DB.prepare(
     `UPDATE material_types
-     SET parent_id = ?1, name = ?2, unit = ?3, status = ?4, updated_at = datetime('now')
-     WHERE id = ?5`,
+     SET parent_id = ?1, name = ?2, category = ?3, unit = ?4, status = ?5, updated_at = datetime('now')
+     WHERE id = ?6`,
   )
-    .bind(body.parent_id, body.name, body.unit, body.status, id)
+    .bind(body.parent_id, body.name, body.category, body.unit, body.status, id)
     .run()
 
   if (meta.changes === 0) return c.json({ error: 'Material não encontrado' }, 404)
@@ -448,8 +467,7 @@ function normalizeTransaction(body: Partial<TransactionInput>) {
   const transaction_type: TransactionType = body.transaction_type === 'venda' ? 'venda' : 'compra'
   const payment_status: PaymentStatus =
     body.payment_status === 'pago' || body.payment_status === 'parcelado' ? body.payment_status : 'a_pagar'
-  const payment_method =
-    body.payment_method && paymentMethods.includes(body.payment_method) ? body.payment_method : null
+  const payment_method = body.payment_method || null
   const weight = Number(body.weight)
   const unit_price = Number(body.unit_price)
   const allowInstallments =
@@ -474,10 +492,12 @@ function normalizeTransaction(body: Partial<TransactionInput>) {
 }
 
 const transactionSelect = `
-  SELECT t.*, c.name AS customer_name, mt.name AS material_name, mt.unit AS material_unit
+  SELECT t.*, c.name AS customer_name, mt.name AS material_name, mt.unit AS material_unit,
+    pm.name AS payment_method_name
   FROM transactions t
   JOIN customers c ON c.id = t.customer_id
   JOIN material_types mt ON mt.id = t.material_type_id
+  LEFT JOIN payment_methods pm ON pm.code = t.payment_method
 `
 
 app.get('/api/transactions', async (c) => {
@@ -515,7 +535,7 @@ app.get('/api/transactions/:id', async (c) => {
 })
 
 app.post('/api/transactions', async (c) => {
-  const body = normalizeTransaction(await c.req.json<Partial<TransactionInput>>())
+  const body = normalizeTransaction(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<TransactionInput>>()))
   if (!body.customer_id) return c.json({ error: 'Cliente é obrigatório' }, 400)
   if (!body.material_type_id) return c.json({ error: 'Material é obrigatório' }, 400)
   if (!Number.isFinite(body.weight) || body.weight <= 0) return c.json({ error: 'Peso inválido' }, 400)
@@ -562,7 +582,7 @@ app.post('/api/transactions', async (c) => {
 
 app.put('/api/transactions/:id', async (c) => {
   const id = c.req.param('id')
-  const body = normalizeTransaction(await c.req.json<Partial<TransactionInput>>())
+  const body = normalizeTransaction(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<TransactionInput>>()))
   if (!body.customer_id) return c.json({ error: 'Cliente é obrigatório' }, 400)
   if (!body.material_type_id) return c.json({ error: 'Material é obrigatório' }, 400)
   if (!Number.isFinite(body.weight) || body.weight <= 0) return c.json({ error: 'Peso inválido' }, 400)
@@ -608,6 +628,155 @@ app.delete('/api/transactions/:id', async (c) => {
   const { meta } = await c.env.DB.prepare('DELETE FROM transactions WHERE id = ?').bind(id).run()
 
   if (meta.changes === 0) return c.json({ error: 'Transação não encontrada' }, 404)
+  return c.body(null, 204)
+})
+
+type PaymentMethodRow = Omit<PaymentMethodRecord, 'use_purchases' | 'use_sales' | 'active'> & {
+  use_purchases: number
+  use_sales: number
+  active: number
+}
+
+function toPaymentMethod(row: PaymentMethodRow): PaymentMethodRecord {
+  return {
+    ...row,
+    use_purchases: Boolean(row.use_purchases),
+    use_sales: Boolean(row.use_sales),
+    active: Boolean(row.active),
+  }
+}
+
+function normalizePaymentMethod(body: Partial<PaymentMethodInput>): PaymentMethodInput {
+  const kind: PaymentKind = body.kind === 'a_prazo' ? 'a_prazo' : 'a_vista'
+  const termDays = Number(body.term_days)
+  return {
+    name: body.name?.trim() ?? '',
+    kind,
+    term_days: kind === 'a_prazo' && Number.isFinite(termDays) && termDays > 0 ? Math.round(termDays) : 0,
+    use_purchases: body.use_purchases !== false,
+    use_sales: body.use_sales !== false,
+    active: body.active !== false,
+  }
+}
+
+function slugify(value: string) {
+  return (
+    value
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'forma'
+  )
+}
+
+async function uniquePaymentCode(db: D1Database, name: string) {
+  const base = slugify(name)
+  const { results } = await db
+    .prepare("SELECT code FROM payment_methods WHERE code = ?1 OR code LIKE ?1 || '\\_%' ESCAPE '\\'")
+    .bind(base)
+    .all<{ code: string }>()
+  const taken = new Set(results.map((r) => r.code))
+  let code = base
+  for (let n = 2; taken.has(code); n++) code = `${base}_${n}`
+  return code
+}
+
+async function findPaymentMethod(db: D1Database, id: string | number) {
+  const row = await db.prepare('SELECT * FROM payment_methods WHERE id = ?').bind(id).first<PaymentMethodRow>()
+  return row ? toPaymentMethod(row) : null
+}
+
+app.get('/api/payment-methods', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM payment_methods ORDER BY name').all<PaymentMethodRow>()
+  return c.json(results.map(toPaymentMethod))
+})
+
+app.post('/api/payment-methods', async (c) => {
+  const body = normalizePaymentMethod(await c.req.json<Partial<PaymentMethodInput>>())
+  if (!body.name) return c.json({ error: 'Nome é obrigatório' }, 400)
+
+  const code = await uniquePaymentCode(c.env.DB, body.name)
+  const result = await c.env.DB.prepare(
+    `INSERT INTO payment_methods (code, name, kind, term_days, use_purchases, use_sales, active)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+  )
+    .bind(
+      code,
+      body.name,
+      body.kind,
+      body.term_days,
+      Number(body.use_purchases),
+      Number(body.use_sales),
+      Number(body.active),
+    )
+    .run()
+
+  return c.json(await findPaymentMethod(c.env.DB, result.meta.last_row_id), 201)
+})
+
+app.put('/api/payment-methods/:id', async (c) => {
+  const id = c.req.param('id')
+  const body = normalizePaymentMethod(await c.req.json<Partial<PaymentMethodInput>>())
+  if (!body.name) return c.json({ error: 'Nome é obrigatório' }, 400)
+
+  const { meta } = await c.env.DB.prepare(
+    `UPDATE payment_methods
+     SET name = ?1, kind = ?2, term_days = ?3, use_purchases = ?4, use_sales = ?5, active = ?6,
+         updated_at = datetime('now')
+     WHERE id = ?7`,
+  )
+    .bind(
+      body.name,
+      body.kind,
+      body.term_days,
+      Number(body.use_purchases),
+      Number(body.use_sales),
+      Number(body.active),
+      id,
+    )
+    .run()
+
+  if (meta.changes === 0) return c.json({ error: 'Forma de pagamento não encontrada' }, 404)
+  return c.json(await findPaymentMethod(c.env.DB, id))
+})
+
+app.patch('/api/payment-methods/:id', async (c) => {
+  const id = c.req.param('id')
+  const body = await c.req.json<{ active?: unknown }>()
+  if (typeof body.active !== 'boolean') return c.json({ error: 'Informe active como true ou false' }, 400)
+
+  const { meta } = await c.env.DB.prepare(
+    "UPDATE payment_methods SET active = ?1, updated_at = datetime('now') WHERE id = ?2",
+  )
+    .bind(Number(body.active), id)
+    .run()
+
+  if (meta.changes === 0) return c.json({ error: 'Forma de pagamento não encontrada' }, 404)
+  return c.json(await findPaymentMethod(c.env.DB, id))
+})
+
+app.delete('/api/payment-methods/:id', async (c) => {
+  const id = c.req.param('id')
+  const method = await findPaymentMethod(c.env.DB, id)
+  if (!method) return c.json({ error: 'Forma de pagamento não encontrada' }, 404)
+
+  const usage = await c.env.DB.prepare(
+    `SELECT
+       (SELECT COUNT(*) FROM transactions WHERE payment_method = ?1) +
+       (SELECT COUNT(*) FROM customers WHERE payment_method = ?1) AS total`,
+  )
+    .bind(method.code)
+    .first<{ total: number }>()
+
+  if (usage && usage.total > 0) {
+    return c.json(
+      { error: 'Esta forma de pagamento já foi usada em clientes ou transações. Desative-a em vez de excluir.' },
+      409,
+    )
+  }
+
+  await c.env.DB.prepare('DELETE FROM payment_methods WHERE id = ?').bind(id).run()
   return c.body(null, 204)
 })
 
@@ -699,6 +868,45 @@ app.get('/api/reports/customers', async (c) => {
   const statement = params.length ? c.env.DB.prepare(sql).bind(...params) : c.env.DB.prepare(sql)
   const { results } = await statement.all<CustomerReportRow>()
   return c.json(results)
+})
+
+app.get('/api/reports/cash-flow', async (c) => {
+  const { clauses, params } = reportDateRange(c)
+  const granularityParam = c.req.query('granularity')
+  const granularity: ReportGranularity =
+    granularityParam === 'week' || granularityParam === 'month' ? granularityParam : 'day'
+
+  const where = `WHERE ${[...clauses, "t.payment_status = 'pago'"].join(' AND ')}`
+
+  const sql = `
+    SELECT ${periodExpr[granularity]} AS period,
+      SUM(CASE WHEN t.transaction_type = 'venda' THEN t.total_amount ELSE 0 END) AS entradas,
+      SUM(CASE WHEN t.transaction_type = 'compra' THEN t.total_amount ELSE 0 END) AS saidas
+    FROM transactions t
+    ${where}
+    GROUP BY period
+    ORDER BY period ASC
+  `
+
+  const statement = params.length ? c.env.DB.prepare(sql).bind(...params) : c.env.DB.prepare(sql)
+  const { results } = await statement.all<CashFlowRow>()
+
+  const from = c.req.query('from')?.trim()
+  let opening_balance = 0
+  if (from) {
+    const opening = await c.env.DB.prepare(
+      `SELECT
+         SUM(CASE WHEN transaction_type = 'venda' THEN total_amount ELSE 0 END) -
+         SUM(CASE WHEN transaction_type = 'compra' THEN total_amount ELSE 0 END) AS balance
+       FROM transactions
+       WHERE payment_status = 'pago' AND transacted_at < ?`,
+    )
+      .bind(from)
+      .first<{ balance: number | null }>()
+    opening_balance = opening?.balance ?? 0
+  }
+
+  return c.json({ opening_balance, rows: results } satisfies CashFlowReport)
 })
 
 export default app

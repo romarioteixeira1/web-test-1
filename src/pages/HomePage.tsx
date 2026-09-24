@@ -1,127 +1,145 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
-import { getCustomerStats } from '../api/customers'
-import { IconUsers } from '../components/layout/icons'
-import type { CustomerStats } from '../../shared/customer'
+import type { ComponentType, ReactNode } from 'react'
+import { useNavigate } from 'react-router'
+import { listCustomers } from '../api/customers'
+import { listMaterials } from '../api/materials'
+import { listPaymentMethods } from '../api/paymentMethods'
+import { useLoader } from '../app/hooks'
+import { CategoryChart, CustomerDonut, MarginChart } from '../components/dashboard/DashboardCharts'
+import { IconBox, IconCard, IconTrend, IconUsers } from '../components/layout/icons'
+import { Hero } from '../components/ui/Hero'
+import { ErrorBox, Loading } from '../components/ui/ListCard'
+import { brl, plural } from '../lib/format'
+import { averageMargin } from '../lib/metrics'
 
-function formatDate(value: string) {
-  const date = new Date(value.includes(' ') ? value.replace(' ', 'T') + 'Z' : value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('pt-BR')
-}
+const quickActions = [
+  { to: '/clientes', label: 'Novo cliente' },
+  { to: '/materiais', label: 'Novo material' },
+  { to: '/formas-pagamento', label: 'Nova forma' },
+]
 
 export function HomePage() {
-  const [stats, setStats] = useState<CustomerStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const { data, loading, error, reload } = useLoader(
+    () => Promise.all([listCustomers(), listMaterials(), listPaymentMethods()]),
+    [],
+  )
+  const [customers, materials, methods] = data ?? [[], [], []]
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    getCustomerStats()
-      .then((data) => {
-        if (!cancelled) setStats(data)
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Falha ao carregar dados')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const suppliers = customers.filter((c) => c.relationship_type !== 'comprador').length
+  const buyers = customers.filter((c) => c.relationship_type !== 'fornecedor').length
+  const categories = new Set(materials.map((m) => m.category).filter(Boolean)).size
+  const activeMethods = methods.filter((m) => m.active).length
+  const avg = averageMargin(materials)
+  const priced = materials.filter((m) => m.buy_price != null && m.sell_price != null).length
+
+  const todayText = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const today = todayText.charAt(0).toUpperCase() + todayText.slice(1)
 
   return (
-    <section className="flex w-full flex-1 flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-medium text-text-strong">Visão geral</h2>
-          <p className="text-sm">Resumo do sistema de clientes</p>
-        </div>
-        <Link
-          to="/clientes"
-          state={{ openCreate: true }}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
-        >
-          Novo cadastro
-        </Link>
-      </div>
+    <div className="page">
+      <Hero
+        title="Bem-vindo ao EcoControl"
+        subtitle="Gestão completa para o seu negócio de materiais recicláveis."
+        aside={
+          <div className="quick">
+            {quickActions.map((q) => (
+              <button
+                key={q.to}
+                type="button"
+                className="qa"
+                onClick={() => navigate(q.to, { state: { openCreate: true } })}
+              >
+                <span className="qa-dot" aria-hidden="true">
+                  +
+                </span>
+                {q.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        <span className="hero-date order-first">{today}</span>
+      </Hero>
 
-      {loading && <p className="text-sm">Carregando...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <ErrorBox message={error} onRetry={() => reload()} />}
+      {loading && <Loading />}
 
-      {stats && (
+      {data && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
-                <IconUsers className="size-6" />
-              </span>
-              <div>
-                <p className="text-sm">Total de clientes</p>
-                <p className="mt-1 text-3xl font-semibold text-text-strong">{stats.total}</p>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
-              <p className="text-sm">Clientes ativos</p>
-              <p className="mt-1 text-3xl font-semibold text-accent">{stats.active}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md">
-              <p className="text-sm">Clientes inativos</p>
-              <p className="mt-1 text-3xl font-semibold text-red-500">{stats.inactive}</p>
-            </div>
+          <div className="kpis">
+            <Kpi
+              icon={IconUsers}
+              accent="#185A1F"
+              label="Clientes"
+              value={customers.length}
+              detail={`${plural(suppliers, 'fornecedor', 'fornecedores')} · ${plural(buyers, 'comprador', 'compradores')}`}
+              onClick={() => navigate('/clientes')}
+            />
+            <Kpi
+              icon={IconBox}
+              accent="#237A2C"
+              label="Materiais"
+              value={materials.length}
+              detail={plural(categories, 'categoria', 'categorias')}
+              onClick={() => navigate('/materiais')}
+            />
+            <Kpi
+              icon={IconCard}
+              accent="#2E9A30"
+              label="Formas de pagamento"
+              value={`${activeMethods}/${methods.length}`}
+              detail="ativas agora"
+              onClick={() => navigate('/formas-pagamento')}
+            />
+            <Kpi
+              icon={IconTrend}
+              accent="#5DBB3A"
+              label="Margem média / kg"
+              value={avg == null ? '—' : brl(avg)}
+              tone={avg != null && avg < 0 ? 'neg' : undefined}
+              detail={`entre ${plural(priced, 'material', 'materiais')} com preço`}
+              onClick={() => navigate('/materiais')}
+            />
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-text-strong">Cadastros recentes</h2>
-              <Link to="/clientes" className="text-sm font-medium text-accent transition-colors hover:text-accent-strong hover:underline">
-                Ver todos
-              </Link>
-            </div>
-
-            {stats.recent.length === 0 ? (
-              <p className="text-sm">Nenhum cliente cadastrado ainda.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full min-w-[560px] text-left text-sm">
-                  <thead className="bg-surface text-text-strong">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Nome</th>
-                      <th className="px-4 py-3 font-medium">Contato</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Cadastro</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.recent.map((customer) => (
-                      <tr key={customer.id} className="border-t border-border transition-colors hover:bg-surface">
-                        <td className="px-4 py-3 text-text-strong">{customer.name}</td>
-                        <td className="px-4 py-3">{customer.email || customer.phone || '—'}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={
-                              customer.status === 'active'
-                                ? 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent'
-                                : 'rounded-full bg-red-500/15 px-2 py-1 text-xs font-medium text-red-500'
-                            }
-                          >
-                            {customer.status === 'active' ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div className="charts">
+            <MarginChart materials={materials} />
+            <CustomerDonut customers={customers} />
+            <CategoryChart materials={materials} />
           </div>
         </>
       )}
-    </section>
+    </div>
+  )
+}
+
+function Kpi({
+  icon: Icon,
+  accent,
+  label,
+  value,
+  detail,
+  tone,
+  onClick,
+}: {
+  icon: ComponentType<{ size?: number }>
+  accent: string
+  label: string
+  value: ReactNode
+  detail: string
+  tone?: 'neg'
+  onClick: () => void
+}) {
+  return (
+    <button type="button" className="kpi" style={{ ['--k' as string]: accent }} onClick={onClick}>
+      <span className="kpi-icon">
+        <Icon size={22} />
+      </span>
+      <span className="kpi-text">
+        <span className="l">{label}</span>
+        <span className={`v mono ${tone ?? ''}`}>{value}</span>
+        <span className="s">{detail}</span>
+      </span>
+    </button>
   )
 }

@@ -1,286 +1,253 @@
-import { useState, type FormEvent } from 'react'
-import { emptyCustomerInput, type CustomerInput } from '../../../shared/customer'
+import { useState } from 'react'
+import { emptyCustomerInput, type CustomerInput, type RelationshipType } from '../../../shared/customer'
+import type { PaymentMethodRecord } from '../../../shared/payment-method'
+import { ChoiceGroup, Field, Modal } from '../ui/Modal'
 
-const relationshipOptions: { value: CustomerInput['relationship_type']; label: string }[] = [
-  { value: 'comprador', label: 'Comprador' },
-  { value: 'fornecedor', label: 'Fornecedor' },
-  { value: 'ambos', label: 'Ambos' },
-]
+const relationshipOptions = [
+  ['fornecedor', 'Fornecedor'],
+  ['comprador', 'Comprador'],
+  ['ambos', 'Ambos'],
+] as const satisfies readonly (readonly [RelationshipType, string])[]
 
-const paymentMethodOptions: { value: NonNullable<CustomerInput['payment_method']>; label: string }[] = [
-  { value: 'pix', label: 'Pix' },
-  { value: 'dinheiro', label: 'Dinheiro' },
-  { value: 'transferencia', label: 'Transferência' },
-  { value: 'cartao_debito', label: 'Cartão de débito' },
-  { value: 'cartao_credito', label: 'Cartão de crédito' },
-]
+const personOptions = [
+  ['fisica', 'Pessoa física'],
+  ['juridica', 'Pessoa jurídica'],
+] as const
 
 type Props = {
-  title: string
+  mode: 'create' | 'edit'
   initialValue?: CustomerInput
+  paymentMethods: PaymentMethodRecord[]
   submitting?: boolean
   error?: string | null
   onSubmit: (input: CustomerInput) => void
   onCancel: () => void
 }
 
-const fieldClass =
-  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
-const labelClass = 'flex flex-col gap-1 text-left text-sm'
-
-export function CustomerFormModal({
-  title,
-  initialValue,
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
-}: Props) {
-  const [form, setForm] = useState<CustomerInput>(initialValue ?? emptyCustomerInput)
+export function CustomerFormModal({ mode, initialValue, paymentMethods, submitting, error, onSubmit, onCancel }: Props) {
+  const [form, setForm] = useState<CustomerInput>(initialValue ?? { ...emptyCustomerInput, relationship_type: 'fornecedor' })
+  const [nameMissing, setNameMissing] = useState(false)
 
   function set<K extends keyof CustomerInput>(key: K, value: CustomerInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    onSubmit(form)
+  function handleSubmit() {
+    if (!form.name.trim()) {
+      setNameMissing(true)
+      document.getElementById('customer-name')?.focus()
+      return
+    }
+    onSubmit({ ...form, state: form.state?.trim().toUpperCase().slice(0, 2) ?? '' })
   }
 
   const isJuridica = form.person_type === 'juridica'
+  // Active methods, plus the customer's current one even if it was deactivated later.
+  const methodOptions = paymentMethods.filter((m) => m.active || m.code === form.payment_method)
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="animate-scale-in max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
+    <Modal
+      title={mode === 'edit' ? 'Editar cliente' : 'Novo cliente'}
+      submitLabel={mode === 'edit' ? 'Salvar alterações' : 'Cadastrar'}
+      submitting={submitting}
+      error={nameMissing ? 'Preencha o nome antes de salvar.' : error}
+      wide
+      onSubmit={handleSubmit}
+      onClose={onCancel}
+    >
+      <ChoiceGroup
+        label="Tipo de cliente"
+        value={form.relationship_type}
+        options={relationshipOptions}
+        onChange={(v) => set('relationship_type', v)}
+      />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
-            <label className={labelClass}>
-              Nome completo *
-              <input
-                className={fieldClass}
-                value={form.name}
-                onChange={(e) => set('name', e.target.value)}
-                required
-                autoFocus
-              />
-            </label>
-            <label className={labelClass}>
-              Status
-              <select
-                className={fieldClass}
-                value={form.status}
-                onChange={(e) => set('status', e.target.value as CustomerInput['status'])}
-              >
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <label className={labelClass}>
-              Tipo de pessoa
-              <select
-                className={fieldClass}
-                value={form.person_type}
-                onChange={(e) => set('person_type', e.target.value as CustomerInput['person_type'])}
-              >
-                <option value="fisica">Pessoa física</option>
-                <option value="juridica">Pessoa jurídica</option>
-              </select>
-            </label>
-            <label className={labelClass}>
-              Tipo de relação
-              <select
-                className={fieldClass}
-                value={form.relationship_type}
-                onChange={(e) => set('relationship_type', e.target.value as CustomerInput['relationship_type'])}
-              >
-                {relationshipOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClass}>
-              Forma de pagamento preferida
-              <select
-                className={fieldClass}
-                value={form.payment_method ?? ''}
-                onChange={(e) =>
-                  set('payment_method', (e.target.value || null) as CustomerInput['payment_method'])
-                }
-              >
-                <option value="">Não informado</option>
-                {paymentMethodOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {isJuridica && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
-              <label className={labelClass}>
-                Razão social
-                <input
-                  className={fieldClass}
-                  value={form.company_name ?? ''}
-                  onChange={(e) => set('company_name', e.target.value)}
-                />
-              </label>
-              <label className={labelClass}>
-                Inscrição estadual
-                <input
-                  className={fieldClass}
-                  value={form.state_registration ?? ''}
-                  onChange={(e) => set('state_registration', e.target.value)}
-                />
-              </label>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              {isJuridica ? 'CNPJ' : 'CPF'}
-              <input
-                className={fieldClass}
-                value={form.document ?? ''}
-                onChange={(e) => set('document', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              Data de nascimento
-              <input
-                type="date"
-                className={fieldClass}
-                value={form.birth_date ?? ''}
-                onChange={(e) => set('birth_date', e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              Telefone / WhatsApp
-              <input
-                className={fieldClass}
-                value={form.phone ?? ''}
-                onChange={(e) => set('phone', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              Email
-              <input
-                type="email"
-                className={fieldClass}
-                value={form.email ?? ''}
-                onChange={(e) => set('email', e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_1fr]">
-            <label className={labelClass}>
-              Endereço
-              <input
-                className={fieldClass}
-                value={form.street ?? ''}
-                onChange={(e) => set('street', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              Número
-              <input
-                className={fieldClass}
-                value={form.number ?? ''}
-                onChange={(e) => set('number', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              Complemento
-              <input
-                className={fieldClass}
-                value={form.complement ?? ''}
-                onChange={(e) => set('complement', e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              Bairro
-              <input
-                className={fieldClass}
-                value={form.neighborhood ?? ''}
-                onChange={(e) => set('neighborhood', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              CEP
-              <input
-                className={fieldClass}
-                value={form.zip_code ?? ''}
-                onChange={(e) => set('zip_code', e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
-            <label className={labelClass}>
-              Cidade
-              <input
-                className={fieldClass}
-                value={form.city ?? ''}
-                onChange={(e) => set('city', e.target.value)}
-              />
-            </label>
-            <label className={labelClass}>
-              Estado
-              <input
-                className={fieldClass}
-                value={form.state ?? ''}
-                onChange={(e) => set('state', e.target.value)}
-                maxLength={2}
-              />
-            </label>
-          </div>
-
-          <label className={labelClass}>
-            Observações
-            <textarea
-              className={fieldClass}
-              rows={3}
-              value={form.notes ?? ''}
-              onChange={(e) => set('notes', e.target.value)}
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="mt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md border border-border px-4 py-2 text-sm transition-all hover:bg-surface active:scale-95"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60 disabled:active:scale-100"
-            >
-              {submitting ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr]">
+        <Field label="Nome ou razão social *" htmlFor="customer-name">
+          <input
+            id="customer-name"
+            className={`inp ${nameMissing ? 'invalid' : ''}`}
+            value={form.name}
+            aria-invalid={nameMissing}
+            onChange={(e) => {
+              set('name', e.target.value)
+              setNameMissing(false)
+            }}
+          />
+        </Field>
+        <Field label="Status" htmlFor="customer-status">
+          <select
+            id="customer-status"
+            className="inp"
+            value={form.status}
+            onChange={(e) => set('status', e.target.value as CustomerInput['status'])}
+          >
+            <option value="active">Ativo</option>
+            <option value="inactive">Inativo</option>
+          </select>
+        </Field>
       </div>
-    </div>
+
+      <ChoiceGroup
+        label="Tipo de pessoa"
+        value={form.person_type}
+        options={personOptions}
+        onChange={(v) => set('person_type', v)}
+      />
+
+      {isJuridica && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr]">
+          <Field label="Nome fantasia / razão social" htmlFor="customer-company">
+            <input
+              id="customer-company"
+              className="inp"
+              value={form.company_name ?? ''}
+              onChange={(e) => set('company_name', e.target.value)}
+            />
+          </Field>
+          <Field label="Inscrição estadual" htmlFor="customer-ie">
+            <input
+              id="customer-ie"
+              className="inp mono"
+              value={form.state_registration ?? ''}
+              onChange={(e) => set('state_registration', e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label={isJuridica ? 'CNPJ' : 'CPF'} htmlFor="customer-doc">
+          <input
+            id="customer-doc"
+            className="inp mono"
+            value={form.document ?? ''}
+            onChange={(e) => set('document', e.target.value)}
+          />
+        </Field>
+        <Field label="Telefone / WhatsApp" htmlFor="customer-phone">
+          <input
+            id="customer-phone"
+            className="inp mono"
+            inputMode="tel"
+            value={form.phone ?? ''}
+            onChange={(e) => set('phone', e.target.value)}
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="E-mail" htmlFor="customer-email">
+          <input
+            id="customer-email"
+            type="email"
+            className="inp"
+            value={form.email ?? ''}
+            onChange={(e) => set('email', e.target.value)}
+          />
+        </Field>
+        <Field label="Forma de pagamento preferida" htmlFor="customer-payment">
+          <select
+            id="customer-payment"
+            className="inp"
+            value={form.payment_method ?? ''}
+            onChange={(e) => set('payment_method', e.target.value || null)}
+          >
+            <option value="">Não informado</option>
+            {methodOptions.map((m) => (
+              <option key={m.code} value={m.code}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <span className="form-section">Endereço</span>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+        <Field label="Rua" htmlFor="customer-street">
+          <input
+            id="customer-street"
+            className="inp"
+            value={form.street ?? ''}
+            onChange={(e) => set('street', e.target.value)}
+          />
+        </Field>
+        <Field label="Número" htmlFor="customer-number">
+          <input
+            id="customer-number"
+            className="inp"
+            value={form.number ?? ''}
+            onChange={(e) => set('number', e.target.value)}
+          />
+        </Field>
+        <Field label="Complemento" htmlFor="customer-complement">
+          <input
+            id="customer-complement"
+            className="inp"
+            value={form.complement ?? ''}
+            onChange={(e) => set('complement', e.target.value)}
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px_80px]">
+        <Field label="Bairro" htmlFor="customer-neighborhood">
+          <input
+            id="customer-neighborhood"
+            className="inp"
+            value={form.neighborhood ?? ''}
+            onChange={(e) => set('neighborhood', e.target.value)}
+          />
+        </Field>
+        <Field label="Cidade" htmlFor="customer-city">
+          <input
+            id="customer-city"
+            className="inp"
+            value={form.city ?? ''}
+            onChange={(e) => set('city', e.target.value)}
+          />
+        </Field>
+        <Field label="CEP" htmlFor="customer-zip">
+          <input
+            id="customer-zip"
+            className="inp mono"
+            inputMode="numeric"
+            value={form.zip_code ?? ''}
+            onChange={(e) => set('zip_code', e.target.value)}
+          />
+        </Field>
+        <Field label="UF" htmlFor="customer-uf">
+          <input
+            id="customer-uf"
+            className="inp uppercase"
+            maxLength={2}
+            value={form.state ?? ''}
+            onChange={(e) => set('state', e.target.value)}
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_2fr]">
+        <Field label="Data de nascimento" htmlFor="customer-birth">
+          <input
+            id="customer-birth"
+            type="date"
+            className="inp"
+            value={form.birth_date ?? ''}
+            onChange={(e) => set('birth_date', e.target.value)}
+          />
+        </Field>
+        <Field label="Observações" htmlFor="customer-notes">
+          <input
+            id="customer-notes"
+            className="inp"
+            value={form.notes ?? ''}
+            onChange={(e) => set('notes', e.target.value)}
+          />
+        </Field>
+      </div>
+    </Modal>
   )
 }

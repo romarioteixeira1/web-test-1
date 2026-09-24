@@ -1,22 +1,15 @@
 /* Base element resets and defaults that sit on top of Tailwind's preflight. */
 html {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
-  color: var(--color-text);
+  color: var(--color-ink);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-h1,
-h2,
-h3 {
-  color: var(--color-text-strong);
-  font-weight: 500;
 }
 
 code {
@@ -26,6 +19,11 @@ code {
 ::selection {
   background: var(--color-accent);
   color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 @keyframes fade-in {
@@ -48,10 +46,27 @@ code {
   }
 }
 
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
 }
 
 .animate-scale-in {
   animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none;
+  }
 }

@@ -1,6 +1,15 @@
 import { Link } from 'react-router'
-import { paymentMethodLabels } from '../../../shared/customer'
-import { paymentStatusLabels, transactionTypeLabels, type TransactionWithDetails } from '../../../shared/transaction'
+import {
+  paymentStatusLabels,
+  transactionTypeLabels,
+  type PaymentStatus,
+  type TransactionWithDetails,
+} from '../../../shared/transaction'
+import { brl, dateOnly, decimal } from '../../lib/format'
+import { paymentMethodName } from '../../lib/labels'
+import { IconReceipt } from '../layout/icons'
+import { EmptyState } from '../ui/ListCard'
+import { RowActions } from '../ui/RowActions'
 
 type Props = {
   transactions: TransactionWithDetails[]
@@ -9,103 +18,92 @@ type Props = {
   onDelete: (transaction: TransactionWithDetails) => void
 }
 
-function formatDateOnly(value: string) {
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  return `${day}/${month}/${year}`
-}
-
-function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-const statusClass = {
-  pago: 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent',
-  a_pagar: 'rounded-full bg-amber-500/15 px-2 py-1 text-xs font-medium text-amber-500',
-  parcelado: 'rounded-full bg-sky-500/15 px-2 py-1 text-xs font-medium text-sky-500',
+const statusTone: Record<PaymentStatus, string> = {
+  pago: 'tone-green',
+  a_pagar: 'neutral',
+  parcelado: 'tone-light',
 }
 
 export function TransactionTable({ transactions, showCustomer = true, onEdit, onDelete }: Props) {
-  if (transactions.length === 0) {
-    return <p className="py-12 text-center text-sm">Nenhuma transação registrada ainda.</p>
-  }
-
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[980px] text-left text-sm">
-        <thead className="bg-surface text-text-strong">
+    <>
+      <table>
+        <colgroup>
+          <col style={{ width: 110 }} />
+          {showCustomer && <col style={{ width: '18%' }} />}
+          <col style={{ width: 100 }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: 110 }} />
+          <col style={{ width: 120 }} />
+          <col style={{ width: 130 }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: 110 }} />
+          <col style={{ width: 140 }} />
+        </colgroup>
+        <thead>
           <tr>
-            <th className="px-4 py-3 font-medium">Data</th>
-            {showCustomer && <th className="px-4 py-3 font-medium">Cliente</th>}
-            <th className="px-4 py-3 font-medium">Tipo</th>
-            <th className="px-4 py-3 font-medium">Material</th>
-            <th className="px-4 py-3 font-medium">Peso</th>
-            <th className="px-4 py-3 font-medium">Preço</th>
-            <th className="px-4 py-3 font-medium">Total</th>
-            <th className="px-4 py-3 font-medium">Pagamento</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium" />
+            <th>Data</th>
+            {showCustomer && <th>Cliente</th>}
+            <th>Tipo</th>
+            <th>Material</th>
+            <th className="right">Peso</th>
+            <th className="right">Preço</th>
+            <th className="right">Total</th>
+            <th>Pagamento</th>
+            <th>Status</th>
+            <th className="center">Ações</th>
           </tr>
         </thead>
         <tbody>
           {transactions.map((t) => (
-            <tr key={t.id} className="border-t border-border transition-colors hover:bg-surface">
-              <td className="px-4 py-3 whitespace-nowrap">{formatDateOnly(t.transacted_at)}</td>
-              {showCustomer && <td className="px-4 py-3 text-text-strong">{t.customer_name}</td>}
-              <td className="px-4 py-3 whitespace-nowrap">
-                <span
-                  className={
-                    t.transaction_type === 'compra'
-                      ? 'rounded-full bg-accent-soft px-2 py-1 text-xs font-medium text-accent'
-                      : 'rounded-full bg-surface px-2 py-1 text-xs font-medium text-text-strong'
-                  }
-                >
+            <tr key={t.id}>
+              <td className="mono">{dateOnly(t.transacted_at)}</td>
+              {showCustomer && (
+                <td>
+                  <Link to={`/clientes/${t.customer_id}`} className="link font-semibold">
+                    {t.customer_name}
+                  </Link>
+                </td>
+              )}
+              <td>
+                <span className={`tag ${t.transaction_type === 'compra' ? 'tone-green' : 'tone-dark'}`}>
                   {transactionTypeLabels[t.transaction_type]}
                 </span>
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">{t.material_name}</td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                {t.weight.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {t.material_unit}
+              <td>{t.material_name}</td>
+              <td className="mono right">
+                {decimal(t.weight)} {t.material_unit}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                {formatCurrency(t.unit_price)}/{t.material_unit}
+              <td className="mono right">{brl(t.unit_price)}</td>
+              <td className="mono right pos">{brl(t.total_amount)}</td>
+              <td>
+                {paymentMethodName(t.payment_method, t.payment_method_name)}
+                {t.installments ? ` · ${t.installments}x` : ''}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap font-medium text-accent">{formatCurrency(t.total_amount)}</td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                {t.payment_method ? paymentMethodLabels[t.payment_method] : '—'}
-                {t.payment_status === 'parcelado' && t.installments ? ` · ${t.installments}x` : ''}
+              <td>
+                <span className={`tag ${statusTone[t.payment_status]}`}>{paymentStatusLabels[t.payment_status]}</span>
               </td>
-              <td className="px-4 py-3">
-                <span className={statusClass[t.payment_status]}>{paymentStatusLabels[t.payment_status]}</span>
-              </td>
-              <td className="px-4 py-3 text-right whitespace-nowrap">
+              <RowActions
+                name={`transação de ${t.customer_name}`}
+                onEdit={() => onEdit(t)}
+                onDelete={() => onDelete(t)}
+              >
                 <Link
                   to={`/transacoes/${t.id}/comprovante`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mr-3 font-medium transition-colors hover:text-accent"
+                  className="icon"
+                  aria-label="Abrir comprovante"
+                  title="Comprovante"
                 >
-                  Comprovante
+                  <IconReceipt size={16} />
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => onEdit(t)}
-                  className="mr-3 font-medium transition-colors hover:text-accent"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(t)}
-                  className="font-medium transition-colors hover:text-red-500"
-                >
-                  Excluir
-                </button>
-              </td>
+              </RowActions>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+      {transactions.length === 0 && <EmptyState />}
+    </>
   )
 }

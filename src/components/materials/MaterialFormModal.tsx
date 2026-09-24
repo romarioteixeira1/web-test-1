@@ -1,14 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import {
   commonUnits,
   emptyMaterialTypeInput,
+  materialCategories,
+  type MaterialCategory,
   type MaterialPriceInput,
   type MaterialTypeInput,
   type MaterialWithPrice,
 } from '../../../shared/material'
+import { parseDecimal, signedBrl, toDecimalInput, todayIso } from '../../lib/format'
+import { Field, Modal } from '../ui/Modal'
 
 type Props = {
-  title: string
+  mode: 'create' | 'edit'
   initialValue?: MaterialWithPrice
   submitting?: boolean
   error?: string | null
@@ -16,154 +20,175 @@ type Props = {
   onCancel: () => void
 }
 
-const fieldClass =
-  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
-const labelClass = 'flex flex-col gap-1 text-left text-sm'
-
-export function MaterialFormModal({ title, initialValue, submitting, error, onSubmit, onCancel }: Props) {
-  const [form, setForm] = useState<MaterialTypeInput>(initialValue ?? emptyMaterialTypeInput)
+export function MaterialFormModal({ mode, initialValue, submitting, error, onSubmit, onCancel }: Props) {
+  const [form, setForm] = useState<MaterialTypeInput>(
+    initialValue
+      ? {
+          parent_id: initialValue.parent_id,
+          name: initialValue.name,
+          category: initialValue.category,
+          unit: initialValue.unit,
+          status: initialValue.status,
+        }
+      : emptyMaterialTypeInput,
+  )
   const [customUnit, setCustomUnit] = useState(!commonUnits.includes(form.unit))
-  const [buyPriceText, setBuyPriceText] = useState(initialValue?.buy_price?.toString() ?? '')
-  const [sellPriceText, setSellPriceText] = useState(initialValue?.sell_price?.toString() ?? '')
-  const [priceError, setPriceError] = useState<string | null>(null)
+  const [buyText, setBuyText] = useState(toDecimalInput(initialValue?.buy_price))
+  const [sellText, setSellText] = useState(toDecimalInput(initialValue?.sell_price))
+  const [localError, setLocalError] = useState<{ field: 'name' | 'price'; message: string } | null>(null)
 
   function set<K extends keyof MaterialTypeInput>(key: K, value: MaterialTypeInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setPriceError(null)
+  const buy = parseDecimal(buyText)
+  const sell = parseDecimal(sellText)
+  const margin = (sell ?? 0) - (buy ?? 0)
 
-    const hasBuy = buyPriceText.trim() !== ''
-    const hasSell = sellPriceText.trim() !== ''
-    if (hasBuy !== hasSell) {
-      setPriceError('Preencha os dois preços (compra e venda) ou deixe ambos em branco.')
+  function handleSubmit() {
+    if (!form.name.trim()) {
+      setLocalError({ field: 'name', message: 'Preencha o nome antes de salvar.' })
+      document.getElementById('material-name')?.focus()
       return
     }
 
-    const price: MaterialPriceInput | null = hasBuy
-      ? {
-          buy_price: Number(buyPriceText),
-          sell_price: Number(sellPriceText),
-          effective_at: new Date().toISOString().slice(0, 10),
-        }
-      : null
+    const hasBuy = buyText.trim() !== ''
+    const hasSell = sellText.trim() !== ''
+    if (hasBuy !== hasSell) {
+      setLocalError({ field: 'price', message: 'Preencha os dois preços (compra e venda) ou deixe ambos em branco.' })
+      return
+    }
+    if (hasBuy && (buy == null || sell == null || buy < 0 || sell < 0)) {
+      setLocalError({ field: 'price', message: 'Informe preços válidos, maiores ou iguais a zero (ex.: 1,50).' })
+      return
+    }
+
+    // A new price entry is only recorded when the prices actually changed.
+    const priceChanged = hasBuy && (buy !== initialValue?.buy_price || sell !== initialValue?.sell_price)
+    const price: MaterialPriceInput | null =
+      priceChanged && buy != null && sell != null ? { buy_price: buy, sell_price: sell, effective_at: todayIso() } : null
 
     onSubmit(form, price)
   }
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="animate-scale-in max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">{title}</h2>
+    <Modal
+      title={mode === 'edit' ? 'Editar material' : 'Novo material'}
+      submitLabel={mode === 'edit' ? 'Salvar alterações' : 'Cadastrar'}
+      submitting={submitting}
+      error={localError?.message ?? error}
+      onSubmit={handleSubmit}
+      onClose={onCancel}
+    >
+      <Field label="Nome do material *" htmlFor="material-name">
+        <input
+          id="material-name"
+          className={`inp ${localError?.field === 'name' ? 'invalid' : ''}`}
+          value={form.name}
+          placeholder="Ex.: Papelão, PET, Alumínio…"
+          onChange={(e) => {
+            set('name', e.target.value)
+            setLocalError(null)
+          }}
+        />
+      </Field>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className={labelClass}>
-            Nome *
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Field label="Categoria" htmlFor="material-category">
+          <select
+            id="material-category"
+            className="inp"
+            value={form.category ?? ''}
+            onChange={(e) => set('category', (e.target.value || null) as MaterialCategory | null)}
+          >
+            {form.category == null && <option value="">Sem categoria</option>}
+            {materialCategories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Unidade" htmlFor="material-unit">
+          {customUnit ? (
             <input
-              className={fieldClass}
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              required
-              autoFocus
-              placeholder="Ex: Papelão, PET, Alumínio..."
+              id="material-unit"
+              className="inp"
+              value={form.unit}
+              placeholder="kg"
+              onChange={(e) => set('unit', e.target.value)}
             />
-          </label>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              Unidade de medida
-              {customUnit ? (
-                <input
-                  className={fieldClass}
-                  value={form.unit}
-                  onChange={(e) => set('unit', e.target.value)}
-                  placeholder="kg"
-                />
-              ) : (
-                <select
-                  className={fieldClass}
-                  value={form.unit}
-                  onChange={(e) => {
-                    if (e.target.value === '__custom__') {
-                      setCustomUnit(true)
-                      return
-                    }
-                    set('unit', e.target.value)
-                  }}
-                >
-                  {commonUnits.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {unit}
-                    </option>
-                  ))}
-                  <option value="__custom__">Outra...</option>
-                </select>
-              )}
-            </label>
-            <label className={labelClass}>
-              Status
-              <select
-                className={fieldClass}
-                value={form.status}
-                onChange={(e) => set('status', e.target.value as MaterialTypeInput['status'])}
-              >
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              Preço de compra (R$/{form.unit})
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={buyPriceText}
-                onChange={(e) => setBuyPriceText(e.target.value)}
-                placeholder="0,00"
-              />
-            </label>
-            <label className={labelClass}>
-              Preço de venda (R$/{form.unit})
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={sellPriceText}
-                onChange={(e) => setSellPriceText(e.target.value)}
-                placeholder="0,00"
-              />
-            </label>
-          </div>
-          <span className="-mt-2 text-xs">Preencha para registrar o preço vigente a partir de hoje.</span>
-
-          {priceError && <p className="text-sm text-red-500">{priceError}</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="mt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md border border-border px-4 py-2 text-sm transition-all hover:bg-surface active:scale-95"
+          ) : (
+            <select
+              id="material-unit"
+              className="inp"
+              value={form.unit}
+              onChange={(e) => {
+                if (e.target.value === '__custom__') {
+                  setCustomUnit(true)
+                  return
+                }
+                set('unit', e.target.value)
+              }}
             >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60 disabled:active:scale-100"
-            >
-              {submitting ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
+              {commonUnits.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+              <option value="__custom__">Outra…</option>
+            </select>
+          )}
+        </Field>
+        <Field label="Status" htmlFor="material-status">
+          <select
+            id="material-status"
+            className="inp"
+            value={form.status}
+            onChange={(e) => set('status', e.target.value as MaterialTypeInput['status'])}
+          >
+            <option value="active">Ativo</option>
+            <option value="inactive">Inativo</option>
+          </select>
+        </Field>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label={`Preço de compra (R$/${form.unit || 'kg'})`} htmlFor="material-buy">
+          <input
+            id="material-buy"
+            className={`inp mono ${localError?.field === 'price' ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            value={buyText}
+            onChange={(e) => {
+              setBuyText(e.target.value)
+              setLocalError(null)
+            }}
+          />
+        </Field>
+        <Field label={`Preço de venda (R$/${form.unit || 'kg'})`} htmlFor="material-sell">
+          <input
+            id="material-sell"
+            className={`inp mono ${localError?.field === 'price' ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            value={sellText}
+            onChange={(e) => {
+              setSellText(e.target.value)
+              setLocalError(null)
+            }}
+          />
+        </Field>
+      </div>
+
+      <div className="margin-box">
+        <span className="lbl">Margem por {form.unit || 'kg'}</span>
+        <strong className={`mono ${margin >= 0 ? 'pos' : 'neg'}`}>{signedBrl(margin)}</strong>
+      </div>
+      <span className="hint -mt-2">
+        Ao mudar os preços, um novo registro vigente a partir de hoje entra no histórico do material.
+      </span>
+    </Modal>
   )
 }

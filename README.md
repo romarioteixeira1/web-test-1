@@ -1,4 +1,4 @@
-# BEST WAY
+# EcoControl
 
 Aplicativo de cadastro de clientes e coletas para uma empresa de reciclagem (React + TypeScript no front-end, API em Cloudflare Worker, dados em D1), pronto para deploy na Cloudflare.
 

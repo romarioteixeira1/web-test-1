@@ -1,49 +1,57 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import * as api from '../api/transactions'
 import * as customersApi from '../api/customers'
 import * as materialsApi from '../api/materials'
+import { listPaymentMethods } from '../api/paymentMethods'
+import { useApp, useTopbarSearch } from '../app/context'
+import { useLoader } from '../app/hooks'
 import { TransactionFormModal } from '../components/transactions/TransactionFormModal'
 import { TransactionTable } from '../components/transactions/TransactionTable'
-import type { Customer } from '../../shared/customer'
-import type { MaterialWithPrice } from '../../shared/material'
-import type { TransactionInput, TransactionWithDetails } from '../../shared/transaction'
+import { Hero, HeroButton } from '../components/ui/Hero'
+import { ErrorBox, ListCard, Loading, Segmented } from '../components/ui/ListCard'
+import type { PaymentStatus, TransactionInput, TransactionWithDetails } from '../../shared/transaction'
+import { brl, dateOnly, errorMessage, matches, share } from '../lib/format'
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; transaction: TransactionWithDetails } | null
+type Filter = 'all' | PaymentStatus
+
+const filters = [
+  ['all', 'Todas'],
+  ['pago', 'Pagas'],
+  ['a_pagar', 'A pagar'],
+  ['parcelado', 'Parceladas'],
+] as const
 
 export function TransactionsPage() {
-  const [transactions, setTransactions] = useState<TransactionWithDetails[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [materials, setMaterials] = useState<MaterialWithPrice[]>([])
-  const [statusFilter, setStatusFilter] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const { toast, setQuery } = useApp()
+  const query = useTopbarSearch('Buscar por cliente ou material')
+  const [filter, setFilter] = useState<Filter>('all')
   const [modal, setModal] = useState<ModalState>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  async function load() {
-    setLoading(true)
-    setLoadError(null)
-    try {
-      const [transactionsData, customersData, materialsData] = await Promise.all([
-        api.listTransactions(statusFilter ? { status: statusFilter } : undefined),
+  const { data, loading, error, reload } = useLoader(
+    () =>
+      Promise.all([
+        api.listTransactions(),
         customersApi.listCustomers(),
         materialsApi.listMaterials(),
-      ])
-      setTransactions(transactionsData)
-      setCustomers(customersData)
-      setMaterials(materialsData)
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Falha ao carregar transações')
-    } finally {
-      setLoading(false)
-    }
-  }
+        listPaymentMethods(),
+      ]),
+    [],
+    'Falha ao carregar transações',
+  )
+  const [transactions, customers, materials, paymentMethods] = data ?? [[], [], [], []]
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter])
+  const bought = transactions.filter((t) => t.transaction_type === 'compra').reduce((s, t) => s + t.total_amount, 0)
+  const sold = transactions.filter((t) => t.transaction_type === 'venda').reduce((s, t) => s + t.total_amount, 0)
+  const pending = transactions.filter((t) => t.payment_status !== 'pago').length
+
+  const visible = transactions.filter(
+    (t) =>
+      (filter === 'all' || t.payment_status === filter) &&
+      matches(query, t.customer_name, t.material_name, t.notes, t.payment_method_name),
+  )
 
   async function handleSubmit(input: TransactionInput) {
     setSubmitting(true)
@@ -51,68 +59,95 @@ export function TransactionsPage() {
     try {
       if (modal?.mode === 'edit') {
         await api.updateTransaction(modal.transaction.id, input)
+        toast('Alterações salvas')
       } else {
         await api.createTransaction(input)
+        toast('Transação cadastrada com sucesso')
+        setFilter('all')
+        setQuery('')
       }
       setModal(null)
-      await load()
+      await reload({ silent: true })
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Falha ao salvar transação')
+      setFormError(errorMessage(err, 'Falha ao salvar transação'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete(transaction: TransactionWithDetails) {
-    if (!window.confirm(`Excluir a transação de ${transaction.customer_name} em ${transaction.transacted_at}?`)) return
-    await api.deleteTransaction(transaction.id)
-    await load()
+    if (
+      !window.confirm(
+        `Excluir a transação de ${transaction.customer_name} em ${dateOnly(transaction.transacted_at)}?`,
+      )
+    )
+      return
+    try {
+      await api.deleteTransaction(transaction.id)
+      toast('Transação excluída')
+      await reload({ silent: true })
+    } catch (err) {
+      toast(errorMessage(err, 'Falha ao excluir transação'), 'error')
+    }
   }
 
+  const volume = bought + sold
+
   return (
-    <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-medium text-text-strong">Transações</h2>
-          <p className="text-sm">Compras e vendas de material, com pagamento e comprovante de pesagem</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setModal({ mode: 'create' })}
-          disabled={materials.length === 0}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60"
-        >
-          Nova transação
-        </button>
-      </div>
-
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20 sm:w-56"
+    <div className="page fill">
+      <Hero
+        chip="ECOCONTROL · OPERAÇÕES"
+        title="Transações"
+        subtitle="Compras e vendas de material, com pagamento e comprovante de pesagem."
+        stats={[
+          { label: 'Comprado', value: brl(bought), share: share(bought, volume) },
+          { label: 'Vendido', value: brl(sold), share: share(sold, volume) },
+          { label: 'Pagamentos em aberto', value: pending, share: share(pending, transactions.length) },
+        ]}
       >
-        <option value="">Todos os status</option>
-        <option value="pago">Pago</option>
-        <option value="a_pagar">A pagar</option>
-        <option value="parcelado">Parcelado</option>
-      </select>
-
-      {loading && <p className="text-sm">Carregando...</p>}
-      {loadError && <p className="text-sm text-red-500">{loadError}</p>}
-      {!loading && !loadError && (
-        <TransactionTable
-          transactions={transactions}
-          onEdit={(transaction) => setModal({ mode: 'edit', transaction })}
-          onDelete={handleDelete}
+        <HeroButton
+          label="Nova transação"
+          disabled={!loading && (materials.length === 0 || customers.length === 0)}
+          title={
+            customers.length === 0
+              ? 'Cadastre um cliente primeiro'
+              : materials.length === 0
+                ? 'Cadastre um material primeiro'
+                : undefined
+          }
+          onClick={() => setModal({ mode: 'create' })}
         />
+      </Hero>
+
+      {error ? (
+        <ErrorBox message={error} onRetry={() => reload()} />
+      ) : (
+        <ListCard
+          title="Histórico de transações"
+          count={visible.length}
+          actions={
+            <Segmented label="Filtrar por pagamento" value={filter} options={filters} onChange={setFilter} />
+          }
+        >
+          {loading ? (
+            <Loading />
+          ) : (
+            <TransactionTable
+              transactions={visible}
+              onEdit={(transaction) => setModal({ mode: 'edit', transaction })}
+              onDelete={handleDelete}
+            />
+          )}
+        </ListCard>
       )}
 
       {modal && (
         <TransactionFormModal
-          title={modal.mode === 'edit' ? 'Editar transação' : 'Nova transação'}
+          mode={modal.mode}
           initialValue={modal.mode === 'edit' ? modal.transaction : undefined}
           customers={customers}
           materials={materials}
+          paymentMethods={paymentMethods}
           submitting={submitting}
           error={formError}
           onSubmit={handleSubmit}
@@ -122,6 +157,6 @@ export function TransactionsPage() {
           }}
         />
       )}
-    </section>
+    </div>
   )
 }

@@ -1,7 +1,8 @@
 export type CustomerStatus = 'active' | 'inactive'
 export type PersonType = 'fisica' | 'juridica'
 export type RelationshipType = 'fornecedor' | 'comprador' | 'ambos'
-export type PaymentMethod = 'pix' | 'dinheiro' | 'transferencia' | 'cartao_debito' | 'cartao_credito'
+/** Código de uma forma de pagamento cadastrada em payment_methods (ex.: 'pix'). */
+export type PaymentMethod = string
 
 export interface Customer {
   id: number
@@ -65,7 +66,8 @@ export const relationshipTypeLabels: Record<RelationshipType, string> = {
   ambos: 'Ambos',
 }
 
-export const paymentMethodLabels: Record<PaymentMethod, string> = {
+/** Nomes das formas de pagamento originais, usados como reserva quando o nome cadastrado não vem da API. */
+export const paymentMethodLabels: Record<string, string> = {
   pix: 'Pix',
   dinheiro: 'Dinheiro',
   transferencia: 'Transferência',
