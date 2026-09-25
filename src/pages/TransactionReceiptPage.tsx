@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router'
 import * as api from '../api/transactions'
 import * as customersApi from '../api/customers'
+import { useApp } from '../app/context'
 import { useLoader } from '../app/hooks'
 import { IconPrinter } from '../components/layout/icons'
 import { ErrorBox, Loading } from '../components/ui/ListCard'
+import type { Company } from '../../shared/company'
 import { paymentStatusLabels, transactionTypeLabels } from '../../shared/transaction'
 import { brl, dateOnly, dateTime, decimal } from '../lib/format'
 import { paymentMethodName } from '../lib/labels'
@@ -11,6 +13,7 @@ import { paymentMethodName } from '../lib/labels'
 export function TransactionReceiptPage() {
   const { id } = useParams<{ id: string }>()
   const transactionId = Number(id)
+  const { company } = useApp()
 
   const { data, loading, error, reload } = useLoader(
     async () => {
@@ -58,6 +61,15 @@ export function TransactionReceiptPage() {
             <p>Emitido em {dateTime(new Date().toISOString())}</p>
           </div>
         </header>
+
+        {company && (
+          <div className="border-b border-border px-7 py-4 text-xs text-muted">
+            <p className="text-sm font-semibold text-ink">{company.legal_name ?? company.trade_name}</p>
+            {companyLines(company).map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col gap-5 px-7 py-6">
           <div className="flex items-center justify-between">
@@ -128,10 +140,28 @@ export function TransactionReceiptPage() {
 
           <div className="mt-6 grid grid-cols-2 gap-6 pt-6 text-center text-xs text-muted">
             <div className="border-t border-border pt-2">Assinatura do cliente</div>
-            <div className="border-t border-border pt-2">Assinatura EcoControl</div>
+            <div className="border-t border-border pt-2">Assinatura {company?.trade_name ?? 'EcoControl'}</div>
           </div>
         </div>
       </article>
     </div>
   )
+}
+
+/** Issuer details for the receipt header; blank fields are left out. */
+function companyLines(company: Company) {
+  const join = (...parts: (string | null)[]) => parts.filter(Boolean).join(' · ')
+  const street = [company.street, company.number].filter(Boolean).join(', ')
+  const city = [company.city, company.state].filter(Boolean).join('/')
+  const license = company.license_number
+    ? `Licença ambiental ${company.license_number}${company.license_agency ? ` (${company.license_agency})` : ''}${
+        company.license_expires_at ? `, válida até ${dateOnly(company.license_expires_at)}` : ''
+      }`
+    : null
+  return [
+    join(company.legal_name && company.trade_name, company.cnpj && `CNPJ ${company.cnpj}`, company.state_registration && `IE ${company.state_registration}`),
+    join(street, company.neighborhood, city, company.zip_code && `CEP ${company.zip_code}`),
+    join(company.phone, company.email),
+    license,
+  ].filter((line): line is string => Boolean(line))
 }
