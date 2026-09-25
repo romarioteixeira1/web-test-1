@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import type { Company } from '../../shared/company'
+import { getCompany } from '../api/company'
 import { listCustomers } from '../api/customers'
 import { listMaterials } from '../api/materials'
 import { listPaymentMethods } from '../api/paymentMethods'
@@ -11,6 +13,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [searchPlaceholder, setSearchPlaceholder] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [counts, setCounts] = useState<Counts | null>(null)
+  const [company, setCompany] = useState<Company | null | undefined>(undefined)
   const [toastState, setToastState] = useState<ToastState | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -30,6 +33,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshCounts()
   }, [refreshCounts])
 
+  useEffect(() => {
+    getCompany()
+      .then(setCompany)
+      .catch(() => setCompany(null))
+  }, [])
+
   const toast = useCallback((message: string, tone: ToastTone = 'success') => {
     clearTimeout(toastTimer.current)
     setToastState({ id: Date.now(), message, tone })
@@ -39,8 +48,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   const value = useMemo(
-    () => ({ searchPlaceholder, setSearchPlaceholder, query, setQuery, counts, refreshCounts, toast }),
-    [searchPlaceholder, query, counts, refreshCounts, toast],
+    () => ({ searchPlaceholder, setSearchPlaceholder, query, setQuery, counts, refreshCounts, company, setCompany, toast }),
+    [searchPlaceholder, query, counts, refreshCounts, company, toast],
   )
 
   return (

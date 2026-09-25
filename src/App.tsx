@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { CashFlowPage } from './pages/CashFlowPage'
 import { CollectionsPage } from './pages/CollectionsPage'
+import { CompanyPage } from './pages/CompanyPage'
 import { CustomerDetailPage } from './pages/CustomerDetailPage'
 import { CustomersPage } from './pages/CustomersPage'
 import { HomePage } from './pages/HomePage'
@@ -17,6 +18,7 @@ function App() {
     <AdminLayout>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/empresa" element={<CompanyPage />} />
         <Route path="/clientes" element={<CustomersPage />} />
         <Route path="/clientes/:id" element={<CustomerDetailPage />} />
         <Route path="/materiais" element={<MaterialsPage />} />

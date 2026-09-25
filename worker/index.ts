@@ -9,6 +9,7 @@ import type {
   RelationshipType,
 } from '../shared/customer'
 import type { CollectionInput, CollectionType, CollectionWithCustomer } from '../shared/collection'
+import type { Company, CompanyInput } from '../shared/company'
 import {
   materialCategories,
   type MaterialPriceInput,
@@ -778,6 +779,77 @@ app.delete('/api/payment-methods/:id', async (c) => {
 
   await c.env.DB.prepare('DELETE FROM payment_methods WHERE id = ?').bind(id).run()
   return c.body(null, 204)
+})
+
+function normalizeCompany(body: Partial<CompanyInput>): CompanyInput {
+  const text = (value: string | null | undefined) => value?.trim() || null
+  return {
+    trade_name: body.trade_name?.trim() ?? '',
+    legal_name: text(body.legal_name),
+    cnpj: text(body.cnpj),
+    state_registration: text(body.state_registration),
+    phone: text(body.phone),
+    email: text(body.email),
+    street: text(body.street),
+    number: text(body.number),
+    complement: text(body.complement),
+    neighborhood: text(body.neighborhood),
+    city: text(body.city),
+    state: text(body.state)?.toUpperCase().slice(0, 2) ?? null,
+    zip_code: text(body.zip_code),
+    license_number: text(body.license_number),
+    license_agency: text(body.license_agency),
+    license_expires_at: text(body.license_expires_at),
+    notes: text(body.notes),
+  }
+}
+
+const companySelect = 'SELECT * FROM company WHERE id = 1'
+
+app.get('/api/company', async (c) => {
+  return c.json(await c.env.DB.prepare(companySelect).first<Company>())
+})
+
+app.put('/api/company', async (c) => {
+  const body = normalizeCompany(await c.req.json<Partial<CompanyInput>>())
+  if (!body.trade_name) return c.json({ error: 'Nome da empresa é obrigatório' }, 400)
+
+  await c.env.DB.prepare(
+    `INSERT INTO company
+       (id, trade_name, legal_name, cnpj, state_registration, phone, email, street, number, complement,
+        neighborhood, city, state, zip_code, license_number, license_agency, license_expires_at, notes)
+     VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
+     ON CONFLICT (id) DO UPDATE SET
+       trade_name = excluded.trade_name, legal_name = excluded.legal_name, cnpj = excluded.cnpj,
+       state_registration = excluded.state_registration, phone = excluded.phone, email = excluded.email,
+       street = excluded.street, number = excluded.number, complement = excluded.complement,
+       neighborhood = excluded.neighborhood, city = excluded.city, state = excluded.state,
+       zip_code = excluded.zip_code, license_number = excluded.license_number,
+       license_agency = excluded.license_agency, license_expires_at = excluded.license_expires_at,
+       notes = excluded.notes, updated_at = datetime('now')`,
+  )
+    .bind(
+      body.trade_name,
+      body.legal_name,
+      body.cnpj,
+      body.state_registration,
+      body.phone,
+      body.email,
+      body.street,
+      body.number,
+      body.complement,
+      body.neighborhood,
+      body.city,
+      body.state,
+      body.zip_code,
+      body.license_number,
+      body.license_agency,
+      body.license_expires_at,
+      body.notes,
+    )
+    .run()
+
+  return c.json(await c.env.DB.prepare(companySelect).first<Company>())
 })
 
 function reportDateRange(c: Context<{ Bindings: Bindings }>) {

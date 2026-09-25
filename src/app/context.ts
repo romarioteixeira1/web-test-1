@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect } from 'react'
+import type { Company } from '../../shared/company'
 import type { CountKey } from '../components/layout/navigation'
 
 export type Counts = Record<CountKey, number>
@@ -15,6 +16,10 @@ export type AppContextValue = {
   /** Item counts shown in the sidebar. */
   counts: Counts | null
   refreshCounts: () => void
+
+  /** The user's company: undefined while loading, null until it is registered. */
+  company: Company | null | undefined
+  setCompany: (company: Company | null) => void
 
   toast: (message: string, tone?: ToastTone) => void
 }

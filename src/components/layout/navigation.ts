@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import {
   IconBox,
+  IconBuilding,
   IconCard,
   IconChart,
   IconHome,
@@ -25,6 +26,7 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
     title: 'CADASTROS',
     items: [
       { to: '/', label: 'Início', icon: IconHome, end: true },
+      { to: '/empresa', label: 'Minha empresa', icon: IconBuilding },
       { to: '/clientes', label: 'Clientes', icon: IconUsers, count: 'customers' },
       { to: '/materiais', label: 'Materiais', icon: IconBox, count: 'materials' },
       { to: '/formas-pagamento', label: 'Formas de pagamento', icon: IconCard, count: 'paymentMethods' },

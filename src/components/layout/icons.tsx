@@ -34,6 +34,17 @@ export function IconHome(props: IconProps) {
   )
 }
 
+export function IconBuilding(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" />
+      <path d="M16 9h2a2 2 0 0 1 2 2v10" />
+      <path d="M2 21h20" />
+      <path d="M8 7h4M8 11h4M8 15h4" />
+    </Svg>
+  )
+}
+
 export function IconUsers(props: IconProps) {
   return (
     <Svg {...props}>
