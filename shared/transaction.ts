@@ -47,6 +47,16 @@ export const emptyTransactionInput: TransactionInput = {
   notes: '',
 }
 
+/** Interest-free installment limit for on-term ("a prazo") payments. */
+export const MAX_INSTALLMENTS = 10
+
+/** Splits a total into equal parcels in cents; the leftover cent (if any) goes to the first parcel. */
+export function splitInstallments(total: number, count: number) {
+  const cents = Math.round(total * 100)
+  const base = Math.floor(cents / count)
+  return { first: (cents - base * (count - 1)) / 100, rest: base / 100 }
+}
+
 export const transactionTypeLabels: Record<TransactionType, string> = {
   compra: 'Compra',
   venda: 'Venda',

@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { orderMaterialHierarchy, type MaterialWithPrice } from '../../../shared/material'
 import type { PaymentMethodRecord } from '../../../shared/payment-method'
-import { emptyTransactionInput, type TransactionInput, type TransactionType } from '../../../shared/transaction'
+import {
+  emptyTransactionInput,
+  MAX_INSTALLMENTS,
+  splitInstallments,
+  type TransactionInput,
+  type TransactionType,
+} from '../../../shared/transaction'
 import type { Customer } from '../../../shared/customer'
 import { brl, parseDecimal, todayIso, toDecimalInput } from '../../lib/format'
 import { ChoiceGroup, Field, Modal } from '../ui/Modal'
@@ -77,8 +83,10 @@ export function TransactionFormModal({
       m.code === form.payment_method ||
       (m.active && (form.transaction_type === 'compra' ? m.use_purchases : m.use_sales)),
   )
+  const onTerm = paymentMethods.find((m) => m.code === form.payment_method)?.kind === 'a_prazo'
   // Same rule the worker uses to keep the installment count.
   const showInstallments =
+    onTerm ||
     form.payment_status === 'parcelado' ||
     form.payment_method === 'cartao_credito' ||
     form.payment_method === 'cartao_debito'
@@ -96,8 +104,11 @@ export function TransactionFormModal({
       document.getElementById(failed[2])?.focus()
       return
     }
-    onSubmit({ ...form, weight: weight!, unit_price: unitPrice! })
+    onSubmit({ ...form, installments: showInstallments ? installmentCount : null, weight: weight!, unit_price: unitPrice! })
   }
+
+  const installmentCount = Math.min(form.installments ?? 1, MAX_INSTALLMENTS)
+  const parcels = splitInstallments(total || 0, installmentCount)
 
   const invalidMessage: Record<Exclude<Invalid, null>, string> = {
     customer: 'Escolha o cliente antes de salvar.',
@@ -226,22 +237,30 @@ export function TransactionFormModal({
         </Field>
         {showInstallments ? (
           <Field label="Parcelas" htmlFor="transaction-installments">
-            <input
+            <select
               id="transaction-installments"
               className="inp mono"
-              inputMode="numeric"
-              placeholder="1"
-              value={form.installments ?? ''}
-              onChange={(e) => {
-                const n = Number.parseInt(e.target.value.replace(/\D/g, ''), 10)
-                set('installments', Number.isFinite(n) && n > 0 ? n : null)
-              }}
-            />
+              value={installmentCount}
+              onChange={(e) => set('installments', Number(e.target.value))}
+            >
+              {Array.from({ length: MAX_INSTALLMENTS }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n}x de {brl(splitInstallments(total || 0, n).rest)}
+                </option>
+              ))}
+            </select>
           </Field>
         ) : (
           <div />
         )}
       </div>
+
+      {showInstallments && total > 0 ? (
+        <p className="hint">
+          {installmentCount}x de {brl(parcels.rest)} sem juros
+          {parcels.first !== parcels.rest ? ` (1ª parcela de ${brl(parcels.first)})` : ''}
+        </p>
+      ) : null}
 
       <Field label="Observações" htmlFor="transaction-notes">
         <textarea

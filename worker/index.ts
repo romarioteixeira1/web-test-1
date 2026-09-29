@@ -18,11 +18,12 @@ import {
   type MaterialWithPrice,
 } from '../shared/material'
 import type { PaymentKind, PaymentMethodInput, PaymentMethodRecord } from '../shared/payment-method'
-import type {
-  PaymentStatus,
-  TransactionInput,
-  TransactionType,
-  TransactionWithDetails,
+import {
+  MAX_INSTALLMENTS,
+  type PaymentStatus,
+  type TransactionInput,
+  type TransactionType,
+  type TransactionWithDetails,
 } from '../shared/transaction'
 import type {
   CashFlowReport,
@@ -464,7 +465,16 @@ app.delete('/api/materials/prices/:priceId', async (c) => {
   return c.body(null, 204)
 })
 
-function normalizeTransaction(body: Partial<TransactionInput>) {
+/** Validates the payment code and flags on-term ("a prazo") methods, which accept installments. */
+async function readTransactionBody(db: D1Database, raw: Partial<TransactionInput>) {
+  const body = await withKnownPaymentCode(db, raw)
+  const method = body.payment_method
+    ? await db.prepare('SELECT kind FROM payment_methods WHERE code = ?').bind(body.payment_method).first<{ kind: PaymentKind }>()
+    : null
+  return normalizeTransaction(body, method?.kind === 'a_prazo')
+}
+
+function normalizeTransaction(body: Partial<TransactionInput>, onTerm: boolean) {
   const transaction_type: TransactionType = body.transaction_type === 'venda' ? 'venda' : 'compra'
   const payment_status: PaymentStatus =
     body.payment_status === 'pago' || body.payment_status === 'parcelado' ? body.payment_status : 'a_pagar'
@@ -472,10 +482,13 @@ function normalizeTransaction(body: Partial<TransactionInput>) {
   const weight = Number(body.weight)
   const unit_price = Number(body.unit_price)
   const allowInstallments =
-    payment_status === 'parcelado' || payment_method === 'cartao_credito' || payment_method === 'cartao_debito'
+    onTerm ||
+    payment_status === 'parcelado' ||
+    payment_method === 'cartao_credito' ||
+    payment_method === 'cartao_debito'
   const installments =
     allowInstallments && Number.isFinite(body.installments) && Number(body.installments) > 0
-      ? Math.round(Number(body.installments))
+      ? Math.min(Math.round(Number(body.installments)), MAX_INSTALLMENTS)
       : null
 
   return {
@@ -536,7 +549,7 @@ app.get('/api/transactions/:id', async (c) => {
 })
 
 app.post('/api/transactions', async (c) => {
-  const body = normalizeTransaction(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<TransactionInput>>()))
+  const body = await readTransactionBody(c.env.DB, await c.req.json<Partial<TransactionInput>>())
   if (!body.customer_id) return c.json({ error: 'Cliente é obrigatório' }, 400)
   if (!body.material_type_id) return c.json({ error: 'Material é obrigatório' }, 400)
   if (!Number.isFinite(body.weight) || body.weight <= 0) return c.json({ error: 'Peso inválido' }, 400)
@@ -583,7 +596,7 @@ app.post('/api/transactions', async (c) => {
 
 app.put('/api/transactions/:id', async (c) => {
   const id = c.req.param('id')
-  const body = normalizeTransaction(await withKnownPaymentCode(c.env.DB, await c.req.json<Partial<TransactionInput>>()))
+  const body = await readTransactionBody(c.env.DB, await c.req.json<Partial<TransactionInput>>())
   if (!body.customer_id) return c.json({ error: 'Cliente é obrigatório' }, 400)
   if (!body.material_type_id) return c.json({ error: 'Material é obrigatório' }, 400)
   if (!Number.isFinite(body.weight) || body.weight <= 0) return c.json({ error: 'Peso inválido' }, 400)
