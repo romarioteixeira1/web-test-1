@@ -9,6 +9,8 @@ import type {
   RelationshipType,
 } from '../shared/customer'
 import type { CollectionInput, CollectionType, CollectionWithCustomer } from '../shared/collection'
+import type { AssistantReply, AssistantRequest } from '../shared/assistant'
+import { askAssistant, sanitizeMessages } from './assistant'
 import type { Company, CompanyInput } from '../shared/company'
 import {
   materialCategories,
@@ -35,6 +37,8 @@ import type {
 } from '../shared/report'
 
 type Bindings = {
+  /** Optional: without it the help chat answers only its built-in topics. */
+  ANTHROPIC_API_KEY?: string
   DB: D1Database
 }
 
@@ -992,6 +996,23 @@ app.get('/api/reports/cash-flow', async (c) => {
   }
 
   return c.json({ opening_balance, rows: results } satisfies CashFlowReport)
+})
+
+app.post('/api/assistant', async (c) => {
+  const apiKey = c.env.ANTHROPIC_API_KEY
+  if (!apiKey) return c.json({ error: 'not_configured' }, 503)
+
+  const body = await c.req.json<Partial<AssistantRequest>>().catch(() => null)
+  const messages = sanitizeMessages(body)
+  if (!messages.length) return c.json({ error: 'Envie uma pergunta.' }, 400)
+
+  try {
+    const reply = await askAssistant(apiKey, messages, typeof body?.page === 'string' ? body.page : undefined)
+    return c.json({ reply } satisfies AssistantReply)
+  } catch (err) {
+    console.error('assistant error', err)
+    return c.json({ error: 'O assistente está indisponível no momento. Tente de novo em instantes.' }, 502)
+  }
 })
 
 export default app

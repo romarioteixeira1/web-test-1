@@ -87,7 +87,7 @@ export function CashFlowPage() {
             />
           </ChartCard>
 
-          <ListCard title="Detalhamento" count={withBalance.length} className="list-auto">
+          <ListCard title="Detalhamento" count={withBalance.length}>
             <table>
               <thead>
                 <tr>

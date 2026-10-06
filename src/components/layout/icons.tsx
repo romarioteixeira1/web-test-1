@@ -201,3 +201,20 @@ export function IconHistory(props: IconProps) {
     </Svg>
   )
 }
+
+export function IconChat(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z" />
+      <path d="M9.2 9.5a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 2.4M12 16h.01" />
+    </Svg>
+  )
+}
+
+export function IconSend(props: IconProps) {
+  return (
+    <Svg strokeWidth={2} {...props}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </Svg>
+  )
+}

@@ -127,7 +127,7 @@ export function ReportsPage() {
             <MarginBarChart rows={marginRows} formatValue={brl} />
           </ChartCard>
 
-          <ListCard title="Detalhamento por material" count={byMaterial.length} className="list-auto">
+          <ListCard title="Detalhamento por material" count={byMaterial.length}>
             <table>
               <colgroup>
                 <col style={{ width: '22%' }} />
@@ -175,7 +175,7 @@ export function ReportsPage() {
             )}
           </ListCard>
 
-          <ListCard title="Detalhamento por cliente" count={byCustomer.length} className="list-auto">
+          <ListCard title="Detalhamento por cliente" count={byCustomer.length}>
             <table>
               <colgroup>
                 <col style={{ width: '25%' }} />
