@@ -29,6 +29,7 @@ export type TransactionInput = Omit<
 
 export interface TransactionWithDetails extends Transaction {
   customer_name: string
+  payment_method_name: string | null
   material_name: string
   material_unit: string
 }
@@ -44,6 +45,16 @@ export const emptyTransactionInput: TransactionInput = {
   installments: null,
   transacted_at: new Date().toISOString().slice(0, 10),
   notes: '',
+}
+
+/** Interest-free installment limit for on-term ("a prazo") payments. */
+export const MAX_INSTALLMENTS = 10
+
+/** Splits a total into equal parcels in cents; the leftover cent (if any) goes to the first parcel. */
+export function splitInstallments(total: number, count: number) {
+  const cents = Math.round(total * 100)
+  const base = Math.floor(cents / count)
+  return { first: (cents - base * (count - 1)) / 100, rest: base / 100 }
 }
 
 export const transactionTypeLabels: Record<TransactionType, string> = {

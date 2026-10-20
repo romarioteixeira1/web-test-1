@@ -1,192 +1,163 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useState } from 'react'
+import { Link, useParams } from 'react-router'
 import * as api from '../api/customers'
 import * as materialsApi from '../api/materials'
+import { listPaymentMethods } from '../api/paymentMethods'
 import * as transactionsApi from '../api/transactions'
+import { useApp } from '../app/context'
+import { useLoader } from '../app/hooks'
 import { TransactionFormModal } from '../components/transactions/TransactionFormModal'
 import { TransactionTable } from '../components/transactions/TransactionTable'
-import { paymentMethodLabels, relationshipTypeLabels, type Customer } from '../../shared/customer'
-import type { MaterialWithPrice } from '../../shared/material'
+import { Hero, HeroButton } from '../components/ui/Hero'
+import { ErrorBox, ListCard, Loading } from '../components/ui/ListCard'
+import { relationshipTypeLabels } from '../../shared/customer'
 import type { TransactionInput, TransactionWithDetails } from '../../shared/transaction'
+import { brl, dateOnly, errorMessage, share } from '../lib/format'
+import { paymentMethodName } from '../lib/labels'
 
-function formatDateOnly(value: string) {
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  return `${day}/${month}/${year}`
-}
-
-type TransactionModalState =
-  | { mode: 'create' }
-  | { mode: 'edit'; transaction: TransactionWithDetails }
-  | null
+type TransactionModalState = { mode: 'create' } | { mode: 'edit'; transaction: TransactionWithDetails } | null
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const customerId = Number(id)
+  const { toast } = useApp()
+  const [modal, setModal] = useState<TransactionModalState>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  const [customer, setCustomer] = useState<Customer | null>(null)
-  const [transactions, setTransactions] = useState<TransactionWithDetails[]>([])
-  const [materials, setMaterials] = useState<MaterialWithPrice[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [transactionModal, setTransactionModal] = useState<TransactionModalState>(null)
-  const [transactionSubmitting, setTransactionSubmitting] = useState(false)
-  const [transactionFormError, setTransactionFormError] = useState<string | null>(null)
-
-  async function load() {
-    setLoading(true)
-    setLoadError(null)
-    try {
-      const [customerData, transactionsData, materialsData] = await Promise.all([
+  const { data, loading, error, reload } = useLoader(
+    () =>
+      Promise.all([
         api.getCustomer(customerId),
         transactionsApi.listTransactions({ customerId }),
         materialsApi.listMaterials(),
-      ])
-      setCustomer(customerData)
-      setTransactions(transactionsData)
-      setMaterials(materialsData)
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Falha ao carregar cliente')
-    } finally {
-      setLoading(false)
-    }
+        listPaymentMethods(),
+      ]),
+    [customerId],
+    'Falha ao carregar cliente',
+  )
+
+  if (loading && !data) return <Loading />
+
+  if (error || !data) {
+    return (
+      <div className="page fill">
+        <ErrorBox message={error ?? 'Cliente não encontrado'} onRetry={() => reload()} />
+        <Link to="/clientes" className="link self-start text-sm font-semibold text-accent">
+          ← Voltar para clientes
+        </Link>
+      </div>
+    )
   }
 
-  async function handleSubmitTransaction(input: TransactionInput) {
-    setTransactionSubmitting(true)
-    setTransactionFormError(null)
+  const [customer, transactions, materials, paymentMethods] = data
+  const bought = transactions.filter((t) => t.transaction_type === 'compra').reduce((s, t) => s + t.total_amount, 0)
+  const sold = transactions.filter((t) => t.transaction_type === 'venda').reduce((s, t) => s + t.total_amount, 0)
+  const contact = [customer.email, customer.phone, customer.document].filter(Boolean).join(' · ')
+  const address = [
+    [customer.street, customer.number].filter(Boolean).join(', '),
+    customer.neighborhood,
+    [customer.city, customer.state?.toUpperCase()].filter(Boolean).join(' / '),
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  async function handleSubmit(input: TransactionInput) {
+    setSubmitting(true)
+    setFormError(null)
     try {
-      if (transactionModal?.mode === 'edit') {
-        await transactionsApi.updateTransaction(transactionModal.transaction.id, input)
+      if (modal?.mode === 'edit') {
+        await transactionsApi.updateTransaction(modal.transaction.id, input)
+        toast('Alterações salvas')
       } else {
         await transactionsApi.createTransaction(input)
+        toast('Transação cadastrada com sucesso')
       }
-      setTransactionModal(null)
-      setTransactions(await transactionsApi.listTransactions({ customerId }))
+      setModal(null)
+      await reload({ silent: true })
     } catch (err) {
-      setTransactionFormError(err instanceof Error ? err.message : 'Falha ao salvar transação')
+      setFormError(errorMessage(err, 'Falha ao salvar transação'))
     } finally {
-      setTransactionSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  async function handleDeleteTransaction(transaction: TransactionWithDetails) {
-    if (!window.confirm(`Excluir a transação de ${formatDateOnly(transaction.transacted_at)}?`)) return
-    await transactionsApi.deleteTransaction(transaction.id)
-    setTransactions((list) => list.filter((t) => t.id !== transaction.id))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerId])
-
-  if (loading) {
-    return (
-      <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-        <p className="text-sm">Carregando...</p>
-      </section>
-    )
-  }
-
-  if (loadError || !customer) {
-    return (
-      <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-        <p className="text-sm text-red-500">{loadError ?? 'Cliente não encontrado'}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/clientes')}
-          className="self-start text-sm text-accent hover:underline"
-        >
-          Voltar para clientes
-        </button>
-      </section>
-    )
+  async function handleDelete(transaction: TransactionWithDetails) {
+    if (!window.confirm(`Excluir a transação de ${dateOnly(transaction.transacted_at)}?`)) return
+    try {
+      await transactionsApi.deleteTransaction(transaction.id)
+      toast('Transação excluída')
+      await reload({ silent: true })
+    } catch (err) {
+      toast(errorMessage(err, 'Falha ao excluir transação'), 'error')
+    }
   }
 
   return (
-    <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex flex-col gap-1">
-        <Link to="/clientes" className="text-sm text-accent transition-colors hover:text-accent-strong hover:underline">
-          ← Voltar para clientes
-        </Link>
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h2 className="text-2xl font-medium text-text-strong">{customer.name}</h2>
-            {customer.person_type === 'juridica' && customer.company_name && (
-              <p className="text-sm">{customer.company_name}</p>
-            )}
-            <p className="text-sm">
-              {customer.email || '—'} {customer.phone ? `· ${customer.phone}` : ''}
-              {customer.document ? ` · ${customer.document}` : ''}
-              {customer.person_type === 'juridica' && customer.state_registration
-                ? ` · IE ${customer.state_registration}`
-                : ''}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
-                {relationshipTypeLabels[customer.relationship_type]}
-              </span>
-              <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
-                {customer.person_type === 'juridica' ? 'Pessoa jurídica' : 'Pessoa física'}
-              </span>
-              {customer.payment_method && (
-                <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-text-strong">
-                  Pagamento: {paymentMethodLabels[customer.payment_method]}
-                </span>
-              )}
-            </div>
-          </div>
-          <span
-            className={
-              customer.status === 'active'
-                ? 'rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent'
-                : 'rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-500'
-            }
-          >
-            {customer.status === 'active' ? 'Ativo' : 'Inativo'}
-          </span>
+    <div className="page fill">
+      <Hero
+        back={{ to: '/clientes', label: 'Clientes' }}
+        title={customer.name}
+        subtitle={contact || 'Sem contato cadastrado'}
+        stats={[
+          { label: 'Transações', value: transactions.length, share: 100 },
+          { label: 'Comprado dele', value: brl(bought), share: share(bought, bought + sold) },
+          { label: 'Vendido a ele', value: brl(sold), share: share(sold, bought + sold) },
+        ]}
+      >
+        <div className="hero-tags">
+          <span className="tag">{relationshipTypeLabels[customer.relationship_type]}</span>
+          <span className="tag">{customer.person_type === 'juridica' ? 'Pessoa jurídica' : 'Pessoa física'}</span>
+          {customer.status === 'inactive' && <span className="tag">Inativo</span>}
+          {customer.payment_method && (
+            <span className="tag">Paga com {paymentMethodName(customer.payment_method, paymentMethods)}</span>
+          )}
+          {customer.person_type === 'juridica' && customer.state_registration && (
+            <span className="tag">IE {customer.state_registration}</span>
+          )}
         </div>
-      </div>
+        {address && <p className="text-sm">{address}</p>}
+        <HeroButton
+          label="Nova transação"
+          disabled={materials.length === 0}
+          title={materials.length === 0 ? 'Cadastre um material primeiro' : undefined}
+          onClick={() => setModal({ mode: 'create' })}
+        />
+      </Hero>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <h3 className="text-lg font-medium text-text-strong">Transações</h3>
-          <button
-            type="button"
-            onClick={() => setTransactionModal({ mode: 'create' })}
-            disabled={materials.length === 0}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60"
-          >
-            Nova transação
-          </button>
-        </div>
+      {customer.notes && (
+        <section className="card card-body text-sm text-ink-2">
+          <strong className="mr-2 text-ink">Observações:</strong>
+          {customer.notes}
+        </section>
+      )}
 
+      <ListCard title="Transações" count={transactions.length}>
         <TransactionTable
           transactions={transactions}
           showCustomer={false}
-          onEdit={(transaction) => setTransactionModal({ mode: 'edit', transaction })}
-          onDelete={handleDeleteTransaction}
+          onEdit={(transaction) => setModal({ mode: 'edit', transaction })}
+          onDelete={handleDelete}
         />
-      </div>
+      </ListCard>
 
-      {transactionModal && (
+      {modal && (
         <TransactionFormModal
-          title={transactionModal.mode === 'edit' ? 'Editar transação' : 'Nova transação'}
-          initialValue={transactionModal.mode === 'edit' ? transactionModal.transaction : undefined}
-          customers={customer ? [customer] : []}
+          mode={modal.mode}
+          initialValue={modal.mode === 'edit' ? modal.transaction : undefined}
+          customers={[customer]}
           materials={materials}
+          paymentMethods={paymentMethods}
           lockCustomerId={customerId}
-          submitting={transactionSubmitting}
-          error={transactionFormError}
-          onSubmit={handleSubmitTransaction}
+          submitting={submitting}
+          error={formError}
+          onSubmit={handleSubmit}
           onCancel={() => {
-            setTransactionModal(null)
-            setTransactionFormError(null)
+            setModal(null)
+            setFormError(null)
           }}
         />
       )}
-    </section>
+    </div>
   )
 }

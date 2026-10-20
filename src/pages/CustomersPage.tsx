@@ -1,46 +1,49 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { useState } from 'react'
 import * as api from '../api/customers'
+import { listPaymentMethods } from '../api/paymentMethods'
+import { useApp, useTopbarSearch } from '../app/context'
+import { useLoader, useOpenCreateOnArrival } from '../app/hooks'
 import { CustomerFormModal } from '../components/customers/CustomerFormModal'
 import { CustomerTable } from '../components/customers/CustomerTable'
+import { Hero, HeroButton } from '../components/ui/Hero'
+import { ErrorBox, ListCard, Loading, Segmented } from '../components/ui/ListCard'
 import type { Customer, CustomerInput } from '../../shared/customer'
+import { errorMessage, matches, share } from '../lib/format'
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; customer: Customer } | null
+type Filter = 'all' | 'fornecedor' | 'comprador'
+
+const filters = [
+  ['all', 'Todos'],
+  ['fornecedor', 'Fornecedores'],
+  ['comprador', 'Compradores'],
+] as const
 
 export function CustomersPage() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const query = searchParams.get('busca') ?? ''
-  const openCreateOnLoad = (location.state as { openCreate?: boolean } | null)?.openCreate ?? false
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [modal, setModal] = useState<ModalState>(openCreateOnLoad ? { mode: 'create' } : null)
+  const { toast, refreshCounts, setQuery } = useApp()
+  const query = useTopbarSearch('Buscar por nome, documento ou cidade')
+  const openCreate = useOpenCreateOnArrival()
+  const [filter, setFilter] = useState<Filter>('all')
+  const [modal, setModal] = useState<ModalState>(openCreate ? { mode: 'create' } : null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (openCreateOnLoad) navigate(location.pathname, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const { data, loading, error, reload } = useLoader(
+    () => Promise.all([api.listCustomers(), listPaymentMethods()]),
+    [],
+    'Falha ao carregar clientes',
+  )
+  const customers = data?.[0] ?? []
+  const paymentMethods = data?.[1] ?? []
 
-  async function load(q?: string) {
-    setLoading(true)
-    setLoadError(null)
-    try {
-      setCustomers(await api.listCustomers(q))
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Falha ao carregar clientes')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const suppliers = customers.filter((c) => c.relationship_type !== 'comprador').length
+  const buyers = customers.filter((c) => c.relationship_type !== 'fornecedor').length
 
-  useEffect(() => {
-    load(query)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query])
+  const visible = customers.filter(
+    (c) =>
+      (filter === 'all' || c.relationship_type === filter || c.relationship_type === 'ambos') &&
+      matches(query, c.name, c.document, c.city, c.email, c.company_name),
+  )
 
   async function handleSubmit(input: CustomerInput) {
     setSubmitting(true)
@@ -48,57 +51,75 @@ export function CustomersPage() {
     try {
       if (modal?.mode === 'edit') {
         await api.updateCustomer(modal.customer.id, input)
+        toast('Alterações salvas')
       } else {
         await api.createCustomer(input)
+        toast('Cliente cadastrado com sucesso')
+        setFilter('all')
+        setQuery('')
       }
       setModal(null)
-      await load(query)
+      refreshCounts()
+      await reload({ silent: true })
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Falha ao salvar cliente')
+      setFormError(errorMessage(err, 'Falha ao salvar cliente'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete(customer: Customer) {
-    if (!window.confirm(`Excluir o cliente "${customer.name}"?`)) return
-    await api.deleteCustomer(customer.id)
-    await load(query)
+    if (!window.confirm(`Excluir "${customer.name}"? As coletas e transações dele também serão excluídas.`)) return
+    try {
+      await api.deleteCustomer(customer.id)
+      toast('Cliente excluído')
+      refreshCounts()
+      await reload({ silent: true })
+    } catch (err) {
+      toast(errorMessage(err, 'Falha ao excluir cliente'), 'error')
+    }
   }
 
   return (
-    <section className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h2 className="text-2xl font-medium text-text-strong">Clientes</h2>
-        <button
-          type="button"
-          onClick={() => setModal({ mode: 'create' })}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95"
+    <div className="page fill">
+      <Hero
+        chip="ECOCONTROL · CADASTROS"
+        title="Clientes"
+        subtitle="Todos os seus fornecedores e compradores em um só lugar."
+        stats={[
+          { label: 'Clientes', value: customers.length, share: 100 },
+          { label: 'Fornecedores', value: suppliers, share: share(suppliers, customers.length) },
+          { label: 'Compradores', value: buyers, share: share(buyers, customers.length) },
+        ]}
+      >
+        <HeroButton label="Novo cliente" onClick={() => setModal({ mode: 'create' })} />
+      </Hero>
+
+      {error ? (
+        <ErrorBox message={error} onRetry={() => reload()} />
+      ) : (
+        <ListCard
+          title="Lista de clientes"
+          count={visible.length}
+          actions={<Segmented label="Filtrar por tipo" value={filter} options={filters} onChange={setFilter} />}
         >
-          Novo cliente
-        </button>
-      </div>
-
-      {query && (
-        <p className="text-sm">
-          Resultados para <span className="text-text-strong">"{query}"</span>
-        </p>
-      )}
-
-      {loading && <p className="text-sm">Carregando...</p>}
-      {loadError && <p className="text-sm text-red-500">{loadError}</p>}
-      {!loading && !loadError && (
-        <CustomerTable
-          customers={customers}
-          onEdit={(customer) => setModal({ mode: 'edit', customer })}
-          onDelete={handleDelete}
-        />
+          {loading ? (
+            <Loading />
+          ) : (
+            <CustomerTable
+              customers={visible}
+              onEdit={(customer) => setModal({ mode: 'edit', customer })}
+              onDelete={handleDelete}
+            />
+          )}
+        </ListCard>
       )}
 
       {modal && (
         <CustomerFormModal
-          title={modal.mode === 'edit' ? 'Editar cliente' : 'Novo cliente'}
+          mode={modal.mode}
           initialValue={modal.mode === 'edit' ? modal.customer : undefined}
+          paymentMethods={paymentMethods}
           submitting={submitting}
           error={formError}
           onSubmit={handleSubmit}
@@ -108,6 +129,6 @@ export function CustomersPage() {
           }}
         />
       )}
-    </section>
+    </div>
   )
 }

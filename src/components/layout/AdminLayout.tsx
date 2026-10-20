@@ -1,21 +1,44 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation } from 'react-router'
 import { Sidebar } from './Sidebar'
+import { MobileNav } from './MobileNav'
 import { Topbar } from './Topbar'
+import { Footer } from './Footer'
+import { HelpChat } from '../assistant/HelpChat'
 
 type Props = {
   children: ReactNode
 }
 
 export function AdminLayout({ children }: Props) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { pathname } = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+  const [helpOpen, setHelpOpen] = useState(false)
+
+  // The main area keeps its scroll between screens, so each new screen starts at the top.
+  // On small screens the window scrolls instead of the main area.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+
+  function backToTop() {
+    mainRef.current?.scrollTo({ top: 0 })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
-    <div className="h-svh print:h-auto">
-      <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
-      <div className="flex h-svh flex-col md:pl-64 print:h-auto print:pl-0">
-        <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="flex flex-1 flex-col overflow-y-auto print:overflow-visible">{children}</main>
+    <div className="app">
+      <Sidebar />
+      <div className="content">
+        <Topbar />
+        <main className="main" ref={mainRef}>
+          {children}
+          <Footer onOpenHelp={() => setHelpOpen(true)} onBackToTop={backToTop} />
+        </main>
+        <HelpChat open={helpOpen} onOpenChange={setHelpOpen} />
       </div>
+      <MobileNav />
     </div>
   )
 }

@@ -1,5 +1,7 @@
-import { useState, type FormEvent } from 'react'
-import { emptyMaterialPriceInput, type MaterialPriceInput } from '../../../shared/material'
+import { useState } from 'react'
+import type { MaterialPriceInput } from '../../../shared/material'
+import { parseDecimal, signedBrl, todayIso } from '../../lib/format'
+import { Field, Modal } from '../ui/Modal'
 
 type Props = {
   unit: string
@@ -9,87 +11,77 @@ type Props = {
   onCancel: () => void
 }
 
-const fieldClass =
-  'w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-strong outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20'
-const labelClass = 'flex flex-col gap-1 text-left text-sm'
-
 export function PriceFormModal({ unit, submitting, error, onSubmit, onCancel }: Props) {
-  const [form, setForm] = useState<MaterialPriceInput>(emptyMaterialPriceInput)
+  const [buyText, setBuyText] = useState('')
+  const [sellText, setSellText] = useState('')
+  const [effectiveAt, setEffectiveAt] = useState(todayIso())
+  const [invalid, setInvalid] = useState(false)
 
-  function set<K extends keyof MaterialPriceInput>(key: K, value: MaterialPriceInput[K]) {
-    setForm((f) => ({ ...f, [key]: value }))
-  }
+  const buy = parseDecimal(buyText)
+  const sell = parseDecimal(sellText)
+  const margin = (sell ?? 0) - (buy ?? 0)
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    onSubmit(form)
+  function handleSubmit() {
+    if (buy == null || sell == null || buy < 0 || sell < 0 || !effectiveAt) {
+      setInvalid(true)
+      document.getElementById('price-buy')?.focus()
+      return
+    }
+    onSubmit({ buy_price: buy, sell_price: sell, effective_at: effectiveAt })
   }
 
   return (
-    <div className="animate-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4">
-      <div className="animate-scale-in w-full max-w-md rounded-lg border border-border bg-bg p-6 text-left shadow-xl">
-        <h2 className="mb-4 text-xl font-medium text-text-strong">Novo preço</h2>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
-              Preço de compra (R$/{unit})
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={form.buy_price}
-                onChange={(e) => set('buy_price', Number(e.target.value))}
-                required
-                autoFocus
-              />
-            </label>
-            <label className={labelClass}>
-              Preço de venda (R$/{unit})
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className={fieldClass}
-                value={form.sell_price}
-                onChange={(e) => set('sell_price', Number(e.target.value))}
-                required
-              />
-            </label>
-          </div>
-
-          <label className={labelClass}>
-            Data de vigência
-            <input
-              type="date"
-              className={fieldClass}
-              value={form.effective_at}
-              onChange={(e) => set('effective_at', e.target.value)}
-              required
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="mt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md border border-border px-4 py-2 text-sm transition-all hover:bg-surface active:scale-95"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-strong hover:shadow-md active:scale-95 disabled:opacity-60 disabled:active:scale-100"
-            >
-              {submitting ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
+    <Modal
+      title="Novo preço"
+      submitLabel="Cadastrar"
+      submitting={submitting}
+      error={invalid ? 'Informe os dois preços, maiores ou iguais a zero (ex.: 1,50).' : error}
+      onSubmit={handleSubmit}
+      onClose={onCancel}
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label={`Preço de compra (R$/${unit}) *`} htmlFor="price-buy">
+          <input
+            id="price-buy"
+            className={`inp mono ${invalid ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            value={buyText}
+            onChange={(e) => {
+              setBuyText(e.target.value)
+              setInvalid(false)
+            }}
+          />
+        </Field>
+        <Field label={`Preço de venda (R$/${unit}) *`} htmlFor="price-sell">
+          <input
+            id="price-sell"
+            className={`inp mono ${invalid ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            value={sellText}
+            onChange={(e) => {
+              setSellText(e.target.value)
+              setInvalid(false)
+            }}
+          />
+        </Field>
       </div>
-    </div>
+
+      <Field label="Vigente a partir de *" htmlFor="price-date">
+        <input
+          id="price-date"
+          type="date"
+          className="inp"
+          value={effectiveAt}
+          onChange={(e) => setEffectiveAt(e.target.value)}
+        />
+      </Field>
+
+      <div className="margin-box">
+        <span className="lbl">Margem por {unit}</span>
+        <strong className={`mono ${margin >= 0 ? 'pos' : 'neg'}`}>{signedBrl(margin)}</strong>
+      </div>
+    </Modal>
   )
 }

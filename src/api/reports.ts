@@ -1,4 +1,10 @@
-import type { CustomerReportRow, MaterialReportRow, PeriodReportRow, ReportGranularity } from '../../shared/report'
+import type {
+  CashFlowReport,
+  CustomerReportRow,
+  MaterialReportRow,
+  PeriodReportRow,
+  ReportGranularity,
+} from '../../shared/report'
 
 async function request<T>(path: string): Promise<T> {
   const res = await fetch(path, { headers: { 'Content-Type': 'application/json' } })
@@ -32,4 +38,8 @@ export function getByPeriod(filters: ReportFilters, granularity: ReportGranulari
 
 export function getByCustomer(filters: ReportFilters) {
   return request<CustomerReportRow[]>(`/api/reports/customers${buildQuery(filters)}`)
+}
+
+export function getCashFlow(filters: ReportFilters, granularity: ReportGranularity) {
+  return request<CashFlowReport>(`/api/reports/cash-flow${buildQuery(filters, { granularity })}`)
 }
