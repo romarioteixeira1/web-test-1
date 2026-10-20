@@ -56,9 +56,9 @@ export function MarginChart({ materials }: { materials: MaterialWithPrice[] }) {
 }
 
 const segmentInfo: { key: RelationshipType; label: string; singular: string; color: string }[] = [
-  { key: 'fornecedor', label: 'Fornecedores', singular: 'fornecedores', color: '#1E6B2A' },
-  { key: 'comprador', label: 'Compradores', singular: 'compradores', color: '#8FD16A' },
-  { key: 'ambos', label: 'Ambos', singular: 'fornecem e compram', color: '#2E9A30' },
+  { key: 'fornecedor', label: 'Fornecedores', singular: 'fornecedores', color: '#3D5229' },
+  { key: 'comprador', label: 'Compradores', singular: 'compradores', color: '#A9BD8B' },
+  { key: 'ambos', label: 'Ambos', singular: 'fornecem e compram', color: '#B08D3C' },
 ]
 
 /** Customers split by relationship, as a donut. "Ambos" only appears when someone has that type. */
@@ -98,7 +98,7 @@ export function CustomerDonut({ customers }: { customers: Customer[] }) {
           role="img"
           aria-label={`Clientes por tipo: ${counts.map((s) => `${s.n} ${s.label.toLowerCase()}`).join(', ')}`}
         >
-          <circle cx="95" cy="95" r="70" fill="none" stroke="#EEF3EA" strokeWidth="24" />
+          <circle cx="95" cy="95" r="70" fill="none" stroke="#F3F5EE" strokeWidth="24" />
           {arcs.map(
             (a) =>
               a.len > 0 && (

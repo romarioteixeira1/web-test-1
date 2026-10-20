@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { useApp } from '../../app/context'
 import { dateOnly } from '../../lib/format'
 import { IconChat, IconChevron } from './icons'
+import { BrandLogo } from './BrandLogo'
 import { navGroups } from './navigation'
 
 type Props = {
@@ -44,7 +45,7 @@ export function Footer({ onOpenHelp, onBackToTop }: Props) {
 
       <div className="footer-grid">
         <div className="footer-brand">
-          <img src="/eco-logo.png" alt="EcoControl" className="footer-logo" />
+          <BrandLogo compact />
           <p>Gestão completa para o seu negócio de materiais recicláveis.</p>
 
           {company ? (

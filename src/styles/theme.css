@@ -2,53 +2,63 @@
  * EcoControl design tokens. Each token becomes a Tailwind utility automatically
  * (e.g. --color-accent -> bg-accent / text-accent / border-accent).
  *
- * The palette is intentionally a single hue: green, in light and dark tones.
- * Tailwind's default colors are cleared so nothing outside the palette can be
- * used by accident. The only non-green color is `danger`, for errors and deletes.
+ * Palette from ecocontrol-layout/: moss green (the `green-*` scale keeps its
+ * name so existing classes still work) on warm paper, with ochre as a sparing
+ * accent. Tailwind's default colors are cleared so nothing outside the palette
+ * can be used by accident. `danger` is reserved for errors and deletes.
  */
 @theme static {
   --color-*: initial;
 
-  --font-sans: 'Geist', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, Consolas, monospace;
+  --font-sans: 'Manrope', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
   --color-white: #ffffff;
   --color-black: #000000;
 
-  --color-green-900: #10301a;
-  --color-green-800: #185a1f;
-  --color-green-700: #1e6b2a;
-  --color-green-600: #237a2c;
-  --color-green-500: #2e9a30;
-  --color-green-400: #5dbb3a;
-  --color-green-300: #8fd16a;
-  --color-green-200: #d3eec4;
-  --color-green-100: #ddf2d6;
-  --color-green-50: #eef6ea;
+  /* Moss scale. */
+  --color-green-900: #1b2416;
+  --color-green-800: #2c3b22;
+  --color-green-700: #3d5229;
+  --color-green-600: #4f6a35;
+  --color-green-500: #6b8a47;
+  --color-green-400: #8aa468;
+  --color-green-300: #a9bd8b;
+  --color-green-200: #cfdbbd;
+  --color-green-100: #e6ecdb;
+  --color-green-50: #f3f5ee;
 
-  --color-bg: #eef3ea;
+  /* Ochre/brass accent: one or two touches per screen. 500 only for icons and large text. */
+  --color-ochre-500: #b08d3c;
+  --color-ochre-700: #7d6222;
+  --color-ochre-100: #f3ecd9;
+
+  --color-bg: #f6f5f0;
   --color-surface: #ffffff;
-  --color-surface-2: #f3f5f1;
-  --color-border: #d6dbd3;
-  --color-border-soft: #e6e9e3;
-  --color-ink: #16211b;
-  --color-ink-2: #3c4841;
-  --color-muted: #56615a;
+  --color-surface-2: #f1f0e9;
+  --color-border: #dfe2d6;
+  --color-border-soft: #eaebe3;
+  --color-ink: #1e231a;
+  --color-ink-2: #3a4034;
+  --color-muted: #5d6555;
 
-  --color-accent: #237a2c;
-  --color-accent-hover: #185a1f;
-  --color-accent-soft: #ddf2d6;
-  --color-accent-text: #1e6b2a;
+  --color-accent: #4f6a35;
+  --color-accent-hover: #3d5229;
+  --color-accent-soft: #e6ecdb;
+  --color-accent-text: #3d5229;
 
-  --color-danger: #a8322a;
-  --color-danger-soft: #fbedec;
+  --color-danger: #a8402c;
+  --color-danger-soft: #f8ece8;
 
-  /* Chart series — two tones of the same green. */
-  --color-series-dark: #1e6b2a;
-  --color-series-light: #8fd16a;
-  --color-series-bar: #2e9a30;
+  /* Chart series: moss main, light moss secondary, ochre third. */
+  --color-series-dark: #4f6a35;
+  --color-series-light: #a9bd8b;
+  --color-series-bar: #6b8a47;
+  --color-series-accent: #b08d3c;
+
+  --shadow-card: 0 1px 2px rgba(30, 35, 26, 0.06), 0 4px 16px rgba(30, 35, 26, 0.05);
 
   --radius-card: 14px;
-  --radius-hero: 20px;
-  --radius-control: 10px;
+  --radius-hero: 24px;
+  --radius-control: 8px;
 }

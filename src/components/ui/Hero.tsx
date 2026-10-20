@@ -24,10 +24,9 @@ type Props = {
 export function Hero({ chip, back, title, subtitle, children, stats, aside }: Props) {
   return (
     <section className="hero print:hidden">
-      <div className="hero-ring r1" aria-hidden="true" />
-      <div className="hero-ring r2" aria-hidden="true" />
-      <div className="hero-logo-wrap">
-        <img src="/eco-icon.png" alt="" className="hero-logo" />
+      <div className="hero-ring" aria-hidden="true" />
+      <div className="hero-logo-wrap" aria-hidden="true">
+        e
       </div>
       <div className="hero-text">
         {back && (

@@ -89,10 +89,6 @@
     flex-direction: column;
     gap: 12px;
   }
-  .footer-logo {
-    width: 132px;
-    height: auto;
-  }
   .footer-brand > p,
   .footer-col > p {
     font-size: 13px;

@@ -69,7 +69,7 @@ export function HomePage() {
           <div className="kpis">
             <Kpi
               icon={IconUsers}
-              accent="#185A1F"
+              accent="#4F6A35"
               label="Clientes"
               value={customers.length}
               detail={`${plural(suppliers, 'fornecedor', 'fornecedores')} · ${plural(buyers, 'comprador', 'compradores')}`}
@@ -77,7 +77,7 @@ export function HomePage() {
             />
             <Kpi
               icon={IconBox}
-              accent="#237A2C"
+              accent="#4F6A35"
               label="Materiais"
               value={materials.length}
               detail={plural(categories, 'categoria', 'categorias')}
@@ -85,7 +85,7 @@ export function HomePage() {
             />
             <Kpi
               icon={IconCard}
-              accent="#2E9A30"
+              accent="#4F6A35"
               label="Formas de pagamento"
               value={`${activeMethods}/${methods.length}`}
               detail="ativas agora"
@@ -93,7 +93,8 @@ export function HomePage() {
             />
             <Kpi
               icon={IconTrend}
-              accent="#5DBB3A"
+              accent="#B08D3C"
+              ochre
               label="Margem média / kg"
               value={avg == null ? '—' : brl(avg)}
               tone={avg != null && avg < 0 ? 'neg' : undefined}
@@ -120,6 +121,7 @@ function Kpi({
   value,
   detail,
   tone,
+  ochre,
   onClick,
 }: {
   icon: ComponentType<{ size?: number }>
@@ -128,10 +130,12 @@ function Kpi({
   value: ReactNode
   detail: string
   tone?: 'neg'
+  /** Ochre accent: used on one card per screen. */
+  ochre?: boolean
   onClick: () => void
 }) {
   return (
-    <button type="button" className="kpi" style={{ ['--k' as string]: accent }} onClick={onClick}>
+    <button type="button" className={`kpi ${ochre ? 'ochre' : ''}`} style={{ ['--k' as string]: accent }} onClick={onClick}>
       <span className="kpi-icon">
         <Icon size={22} />
       </span>

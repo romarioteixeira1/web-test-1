@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router'
+import { BrandLogo } from './BrandLogo'
 import { useApp } from '../../app/context'
 import { abbreviation } from '../../lib/format'
 import { navGroups } from './navigation'
@@ -9,7 +10,7 @@ export function Sidebar() {
   return (
     <nav className="sidebar print:hidden" aria-label="Menu principal">
       <div className="brand">
-        <img src="/eco-logo.png" alt="EcoControl" className="brand-logo-full" />
+        <BrandLogo />
       </div>
 
       {navGroups.map((group) => (
