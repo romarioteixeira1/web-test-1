@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { Sidebar } from './Sidebar'
+import { MobileNav } from './MobileNav'
 import { Topbar } from './Topbar'
 import { Footer } from './Footer'
 import { HelpChat } from '../assistant/HelpChat'
@@ -37,6 +38,7 @@ export function AdminLayout({ children }: Props) {
         </main>
         <HelpChat open={helpOpen} onOpenChange={setHelpOpen} />
       </div>
+      <MobileNav />
     </div>
   )
 }

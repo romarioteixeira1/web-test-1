@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router'
 import { useApp } from '../../app/context'
+import { BrandLogo } from './BrandLogo'
 import { IconChevron, IconSearch } from './icons'
 import { findNavItem } from './navigation'
 
@@ -11,6 +12,9 @@ export function Topbar() {
 
   return (
     <header className="topbar print:hidden">
+      <span className="topbar-brand">
+        <BrandLogo compact />
+      </span>
       <div className="crumbs">
         <span>{isHome ? 'EcoControl' : current ? capitalize(current.group) : 'EcoControl'}</span>
         <IconChevron size={14} />

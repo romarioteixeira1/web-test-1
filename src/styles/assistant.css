@@ -203,10 +203,28 @@
     }
   }
 
-  @media (max-width: 640px) {
+  /* Phones: sits above the bottom tab bar and shrinks to a round icon button. */
+  @media (max-width: 900px) {
     .help-chat {
       right: 16px;
-      bottom: 16px;
+      bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+    .help-toggle {
+      width: 52px;
+      min-height: 52px;
+      padding: 0;
+      justify-content: center;
+    }
+    .help-toggle > span:not(.sr-only) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .help-panel {
+      max-height: calc(100svh - 200px);
     }
   }
 
