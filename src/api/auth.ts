@@ -1,4 +1,4 @@
-import type { AuthSession, LoginInput, SetupInput, User } from '../../shared/auth'
+import type { AuthSession, ChangePasswordInput, LoginInput, SetupInput, User } from '../../shared/auth'
 import { request } from './http'
 
 export function getSession() {
@@ -12,6 +12,10 @@ export function login(input: LoginInput) {
 /** Creates the first account; only works while none exists. */
 export function setupAccount(input: SetupInput) {
   return request<User>('/api/auth/setup', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function changePassword(input: ChangePasswordInput) {
+  return request<void>('/api/auth/password', { method: 'POST', body: JSON.stringify(input) })
 }
 
 export function logout() {

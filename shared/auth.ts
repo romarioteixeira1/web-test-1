@@ -19,4 +19,9 @@ export type SetupInput = LoginInput & {
   name: string
 }
 
+export type ChangePasswordInput = {
+  current_password: string
+  new_password: string
+}
+
 export const MIN_PASSWORD_LENGTH = 8

@@ -1,6 +1,13 @@
 import { Hono, type Context, type MiddlewareHandler } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
-import { MIN_PASSWORD_LENGTH, type AuthSession, type LoginInput, type SetupInput, type User } from '../shared/auth'
+import {
+  MIN_PASSWORD_LENGTH,
+  type AuthSession,
+  type ChangePasswordInput,
+  type LoginInput,
+  type SetupInput,
+  type User,
+} from '../shared/auth'
 
 type AuthEnv = {
   Bindings: { DB: D1Database }
@@ -158,6 +165,34 @@ auth.post('/setup', async (c) => {
 
   await createSession(c, user.id)
   return c.json(user)
+})
+
+/** Changes the signed-in user's password and signs out their other devices. */
+auth.post('/password', async (c) => {
+  const user = await currentUser(c)
+  if (!user) return c.json({ error: 'Sua sessão expirou. Entre novamente.' }, 401)
+
+  const body = await c.req.json<Partial<ChangePasswordInput>>().catch(() => null)
+  const current = typeof body?.current_password === 'string' ? body.current_password : ''
+  const next = typeof body?.new_password === 'string' ? body.new_password : ''
+  if (next.length < MIN_PASSWORD_LENGTH) {
+    return c.json({ error: `A nova senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` }, 400)
+  }
+
+  const row = await c.env.DB.prepare('SELECT password_hash FROM users WHERE id = ?')
+    .bind(user.id)
+    .first<{ password_hash: string }>()
+  // 400, not 401: a 401 would send the app back to the login screen.
+  if (!row || !(await verifyPassword(current, row.password_hash))) {
+    return c.json({ error: 'A senha atual está incorreta.' }, 400)
+  }
+
+  const sessionId = await sha256(getCookie(c, COOKIE_NAME) ?? '')
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(await hashPassword(next), user.id),
+    c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND id <> ?').bind(user.id, sessionId),
+  ])
+  return c.body(null, 204)
 })
 
 auth.post('/logout', async (c) => {
