@@ -792,12 +792,7 @@
     justify-content: flex-end;
     gap: 12px;
     flex-shrink: 0;
-  }
-  /* Form footer inside a page card (e.g. Minha empresa). */
-  .card > .modal-foot {
-    border-radius: 0 0 var(--radius-card) var(--radius-card);
-  }
-  .margin-box {
+  }  .margin-box {
     display: flex;
     justify-content: space-between;
     align-items: center;

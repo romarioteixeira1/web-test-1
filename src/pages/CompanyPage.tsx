@@ -1,48 +1,32 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import * as api from '../api/company'
 import { useApp } from '../app/context'
+import { CompanyFormModal } from '../components/company/CompanyFormModal'
+import { IconBuilding, IconEdit, IconPlus } from '../components/layout/icons'
 import { Hero } from '../components/ui/Hero'
 import { Loading } from '../components/ui/ListCard'
-import { Field } from '../components/ui/Modal'
 import { emptyCompanyInput, type Company, type CompanyInput } from '../../shared/company'
 import { dateOnly, errorMessage, share, todayIso } from '../lib/format'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export function CompanyPage() {
-  const { company } = useApp()
-  if (company === undefined) return <Loading />
-  // Keyed so the form restarts from the saved data when the company is first registered.
-  return <CompanyForm key={company ? 'saved' : 'new'} company={company} />
-}
-
-function CompanyForm({ company }: { company: Company | null }) {
-  const { setCompany, toast } = useApp()
-  const [form, setForm] = useState<CompanyInput>(() => toInput(company))
-  const [nameMissing, setNameMissing] = useState(false)
+  const { company, setCompany, toast } = useApp()
+  const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  function set<K extends keyof CompanyInput>(key: K, value: CompanyInput[K]) {
-    setForm((f) => ({ ...f, [key]: value }))
-  }
+  if (company === undefined) return <Loading />
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (!form.trade_name.trim()) {
-      setNameMissing(true)
-      document.getElementById('company-name')?.focus()
-      return
-    }
+  async function handleSubmit(input: CompanyInput) {
     setSubmitting(true)
-    setError(null)
+    setFormError(null)
     try {
-      const saved = await api.saveCompany(form)
-      setCompany(saved)
-      setForm(toInput(saved))
-      toast(company ? 'Dados da empresa salvos' : 'Empresa cadastrada')
+      setCompany(await api.saveCompany(input))
+      toast(company ? 'Cadastro da empresa atualizado' : 'Empresa cadastrada')
+      setModalOpen(false)
     } catch (err) {
-      setError(errorMessage(err, 'Falha ao salvar empresa'))
+      setFormError(errorMessage(err, 'Falha ao salvar empresa'))
     } finally {
       setSubmitting(false)
     }
@@ -50,237 +34,132 @@ function CompanyForm({ company }: { company: Company | null }) {
 
   const fields = Object.keys(emptyCompanyInput) as (keyof CompanyInput)[]
   const filled = fields.filter((key) => company?.[key]).length
-  const percent = Math.round((filled / fields.length) * 100)
   const license = licenseStatus(company?.license_expires_at ?? null)
 
   return (
     <div className="page">
       <Hero
         chip="ECOCONTROL · CADASTROS"
-        title={company?.trade_name ?? 'Cadastre sua empresa'}
+        title={company?.trade_name ?? 'Minha empresa'}
         subtitle={
           company
             ? 'Dados da sua empresa de reciclagem. Mantenha-os atualizados.'
-            : 'Informe os dados da sua empresa de reciclagem para começar a usar o EcoControl.'
+            : 'Sua empresa ainda não foi cadastrada no EcoControl.'
         }
-        stats={[
-          { label: 'Cadastro preenchido', value: `${percent}%`, share: share(filled, fields.length) },
-          { label: 'Licença ambiental', value: license.label, share: license.share, negative: license.expired },
-        ]}
+        stats={
+          company
+            ? [
+                {
+                  label: 'Cadastro preenchido',
+                  value: `${Math.round((filled / fields.length) * 100)}%`,
+                  share: share(filled, fields.length),
+                },
+                { label: 'Licença ambiental', value: license.label, share: license.share, negative: license.expired },
+              ]
+            : undefined
+        }
       />
 
-      <form className="card" onSubmit={handleSubmit} noValidate>
-        <div className="card-head">
-          <div className="card-title">
-            <h2>Dados da empresa</h2>
+      {company ? (
+        <section className="card">
+          <div className="card-head">
+            <div className="card-title">
+              <h2>Dados da empresa</h2>
+            </div>
+            <button type="button" className="btn" onClick={() => setModalOpen(true)}>
+              <IconEdit size={16} />
+              Editar cadastro
+            </button>
           </div>
-          <span className="hint">Campos com * são obrigatórios.</span>
-        </div>
-
-        <div className="card-body flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Nome fantasia *" htmlFor="company-name">
-              <input
-                id="company-name"
-                className={`inp ${nameMissing ? 'invalid' : ''}`}
-                value={form.trade_name}
-                aria-invalid={nameMissing}
-                placeholder="Ex.: Recicla Mais"
-                onChange={(e) => {
-                  set('trade_name', e.target.value)
-                  setNameMissing(false)
-                }}
-              />
-            </Field>
-            <Field label="Razão social" htmlFor="company-legal">
-              <input
-                id="company-legal"
-                className="inp"
-                value={form.legal_name ?? ''}
-                onChange={(e) => set('legal_name', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="CNPJ" htmlFor="company-cnpj">
-              <input
-                id="company-cnpj"
-                className="inp mono"
-                inputMode="numeric"
-                placeholder="00.000.000/0000-00"
-                value={form.cnpj ?? ''}
-                onChange={(e) => set('cnpj', formatCnpj(e.target.value))}
-              />
-            </Field>
-            <Field label="Inscrição estadual" htmlFor="company-ie">
-              <input
-                id="company-ie"
-                className="inp mono"
-                value={form.state_registration ?? ''}
-                onChange={(e) => set('state_registration', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Telefone / WhatsApp" htmlFor="company-phone">
-              <input
-                id="company-phone"
-                className="inp mono"
-                inputMode="tel"
-                value={form.phone ?? ''}
-                onChange={(e) => set('phone', e.target.value)}
-              />
-            </Field>
-            <Field label="E-mail" htmlFor="company-email">
-              <input
-                id="company-email"
-                type="email"
-                className="inp"
-                value={form.email ?? ''}
-                onChange={(e) => set('email', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <span className="form-section">Endereço</span>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
-            <Field label="Rua" htmlFor="company-street">
-              <input
-                id="company-street"
-                className="inp"
-                value={form.street ?? ''}
-                onChange={(e) => set('street', e.target.value)}
-              />
-            </Field>
-            <Field label="Número" htmlFor="company-number">
-              <input
-                id="company-number"
-                className="inp"
-                value={form.number ?? ''}
-                onChange={(e) => set('number', e.target.value)}
-              />
-            </Field>
-            <Field label="Complemento" htmlFor="company-complement">
-              <input
-                id="company-complement"
-                className="inp"
-                value={form.complement ?? ''}
-                onChange={(e) => set('complement', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px_80px]">
-            <Field label="Bairro" htmlFor="company-neighborhood">
-              <input
-                id="company-neighborhood"
-                className="inp"
-                value={form.neighborhood ?? ''}
-                onChange={(e) => set('neighborhood', e.target.value)}
-              />
-            </Field>
-            <Field label="Cidade" htmlFor="company-city">
-              <input
-                id="company-city"
-                className="inp"
-                value={form.city ?? ''}
-                onChange={(e) => set('city', e.target.value)}
-              />
-            </Field>
-            <Field label="CEP" htmlFor="company-zip">
-              <input
-                id="company-zip"
-                className="inp mono"
-                inputMode="numeric"
-                value={form.zip_code ?? ''}
-                onChange={(e) => set('zip_code', e.target.value)}
-              />
-            </Field>
-            <Field label="UF" htmlFor="company-uf">
-              <input
-                id="company-uf"
-                className="inp uppercase"
-                maxLength={2}
-                value={form.state ?? ''}
-                onChange={(e) => set('state', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <span className="form-section">Licença ambiental</span>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Nº da licença de operação" htmlFor="company-license">
-              <input
-                id="company-license"
-                className="inp mono"
-                value={form.license_number ?? ''}
-                onChange={(e) => set('license_number', e.target.value)}
-              />
-            </Field>
-            <Field label="Órgão emissor" htmlFor="company-agency">
-              <input
-                id="company-agency"
-                className="inp"
-                placeholder="Ex.: CETESB, IBAMA"
-                value={form.license_agency ?? ''}
-                onChange={(e) => set('license_agency', e.target.value)}
-              />
-            </Field>
-            <Field label="Validade" htmlFor="company-license-expires">
-              <input
-                id="company-license-expires"
-                type="date"
-                className="inp"
-                value={form.license_expires_at ?? ''}
-                onChange={(e) => set('license_expires_at', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <Field label="Observações" htmlFor="company-notes">
-            <input
-              id="company-notes"
-              className="inp"
-              value={form.notes ?? ''}
-              onChange={(e) => set('notes', e.target.value)}
+          <div className="card-body flex flex-col gap-5">
+            <InfoGroup
+              items={[
+                ['Nome fantasia', company.trade_name],
+                ['Razão social', company.legal_name],
+                ['CNPJ', company.cnpj, true],
+                ['Inscrição estadual', company.state_registration, true],
+                ['Telefone / WhatsApp', company.phone, true],
+                ['E-mail', company.email],
+              ]}
             />
-          </Field>
-        </div>
-
-        {(nameMissing || error) && (
-          <p className="form-error" role="alert">
-            {nameMissing ? 'Preencha o nome fantasia antes de salvar.' : error}
+            <InfoGroup
+              title="Endereço"
+              items={[
+                ['Rua', [company.street, company.number].filter(Boolean).join(', ')],
+                ['Complemento', company.complement],
+                ['Bairro', company.neighborhood],
+                ['Cidade / UF', [company.city, company.state].filter(Boolean).join(' / ')],
+                ['CEP', company.zip_code, true],
+              ]}
+            />
+            <InfoGroup
+              title="Licença ambiental"
+              items={[
+                ['Nº da licença de operação', company.license_number, true],
+                ['Órgão emissor', company.license_agency],
+                ['Validade', company.license_expires_at && dateOnly(company.license_expires_at), true],
+              ]}
+            />
+            {company.notes && <InfoGroup title="Observações" items={[['', company.notes]]} />}
+          </div>
+        </section>
+      ) : (
+        <section className="card card-body flex flex-col items-center gap-3 py-12 text-center">
+          <span className="badge tone-green">
+            <IconBuilding size={22} />
+          </span>
+          <h2 className="text-lg font-semibold text-ink">Nenhuma empresa cadastrada</h2>
+          <p className="max-w-md text-sm text-muted">
+            Informe nome, CNPJ, endereço e licença ambiental da sua empresa. Esses dados aparecem nos comprovantes.
           </p>
-        )}
-        <div className="modal-foot">
-          <button type="submit" className="btn" disabled={submitting}>
-            {submitting ? 'Salvando…' : company ? 'Salvar alterações' : 'Cadastrar empresa'}
+          <button type="button" className="btn mt-2" onClick={() => setModalOpen(true)}>
+            <IconPlus size={16} />
+            Cadastre sua empresa aqui
           </button>
-        </div>
-      </form>
+        </section>
+      )}
+
+      {modalOpen && (
+        <CompanyFormModal
+          mode={company ? 'edit' : 'create'}
+          initialValue={company ? toInput(company) : undefined}
+          submitting={submitting}
+          error={formError}
+          onSubmit={handleSubmit}
+          onCancel={() => {
+            setModalOpen(false)
+            setFormError(null)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function toInput(company: Company | null): CompanyInput {
-  if (!company) return emptyCompanyInput
+type InfoItem = [label: string, value: string | null | undefined, mono?: boolean]
+
+function InfoGroup({ title, items }: { title?: string; items: InfoItem[] }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {title && <span className="form-section">{title}</span>}
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map(([label, value, mono]) => (
+          <div key={label || 'value'} className="flex min-w-0 flex-col gap-1">
+            {label && <dt className="lbl">{label}</dt>}
+            <dd className={`break-words text-sm ${value ? 'text-ink' : 'text-muted'} ${mono && value ? 'mono' : ''}`}>
+              {value || '—'}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+function toInput(company: Company): CompanyInput {
   const input = { ...emptyCompanyInput }
   for (const key of Object.keys(input) as (keyof CompanyInput)[]) input[key] = company[key] ?? ''
   return input
-}
-
-/** 00.000.000/0000-00 while typing. */
-function formatCnpj(value: string) {
-  const d = value.replace(/\D/g, '').slice(0, 14)
-  return d
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2')
 }
 
 function licenseStatus(expiresAt: string | null) {
