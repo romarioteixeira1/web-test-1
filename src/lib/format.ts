@@ -89,5 +89,7 @@ export function matches(query: string, ...fields: (string | null | undefined)[])
 }
 
 export function errorMessage(err: unknown, fallback: string) {
+  // fetch() rejects with a TypeError when the request never reaches the server (offline, server down).
+  if (err instanceof TypeError || !navigator.onLine) return 'Sem conexão com o servidor. Verifique sua internet.'
   return err instanceof Error ? err.message : fallback
 }

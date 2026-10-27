@@ -49,6 +49,17 @@
 
   --color-danger: #a8402c;
   --color-danger-soft: #f8ece8;
+  --color-danger-border: #ecc7bd;
+
+  /* Form fields, raised controls and the quieter fills between surface and border. */
+  --color-field: #ffffff;
+  --color-raised: #ffffff;
+  --color-border-strong: #cfd2c4;
+  --color-border-stronger: #b8bcac;
+  --color-row-alt: #fafaf6;
+  --color-neutral-soft: #ecebe4;
+  --color-switch-off: #cbcebf;
+  --color-brand-ink: #2c3b22;
 
   /* Chart series: moss main, light moss secondary, ochre third. */
   --color-series-dark: #4f6a35;
@@ -61,4 +72,97 @@
   --radius-card: 14px;
   --radius-hero: 24px;
   --radius-control: 8px;
+}
+
+/*
+ * Dark theme, switched by <html data-theme="dark"> (see src/app/theme.ts).
+ * Only the neutral tokens and the light green/ochre tints change; the deep
+ * green scale stays, so the hero, buttons and chat header keep their colors.
+ * Screen only: printing always uses the light theme.
+ */
+@media screen {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --color-bg: #12150f;
+    --color-surface: #1a1e16;
+    --color-surface-2: #20251b;
+    --color-border: #2f3628;
+    --color-border-soft: #262c21;
+    --color-ink: #e9ecdf;
+    --color-ink-2: #c9cebd;
+    --color-muted: #9aa38d;
+
+    --color-green-50: #1e2519;
+    --color-green-100: #28321f;
+    --color-green-200: #3a4a2d;
+    --color-ochre-100: #362d1a;
+    --color-ochre-700: #dcbb6e;
+
+    --color-accent: #5a7a3c;
+    --color-accent-hover: #6b8a47;
+    --color-accent-soft: #263120;
+    --color-accent-text: #b4c896;
+
+    --color-danger: #e0806a;
+    --color-danger-soft: #35201a;
+    --color-danger-border: #5c3126;
+
+    --color-field: #151911;
+    --color-raised: #2c3326;
+    --color-border-strong: #3a4233;
+    --color-border-stronger: #4d5744;
+    --color-row-alt: #1d2219;
+    --color-neutral-soft: #2a2f24;
+    --color-switch-off: #454d3d;
+    --color-brand-ink: #dfe7d2;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  /*
+   * Islands that stay light in the dark theme: the hero sits on its own deep
+   * green, and the receipt (.theme-light) is a sheet of paper. Same values as
+   * the light tokens in @theme above, so keep them in sync.
+   */
+  :root[data-theme='dark'] :is(.hero, .theme-light) {
+    color-scheme: light;
+    /* Text that just inherits would otherwise keep the dark theme's light ink. */
+    color: var(--color-ink);
+
+    --color-bg: #f6f5f0;
+    --color-surface: #ffffff;
+    --color-surface-2: #f1f0e9;
+    --color-border: #dfe2d6;
+    --color-border-soft: #eaebe3;
+    --color-ink: #1e231a;
+    --color-ink-2: #3a4034;
+    --color-muted: #5d6555;
+
+    --color-green-50: #f3f5ee;
+    --color-green-100: #e6ecdb;
+    --color-green-200: #cfdbbd;
+    --color-ochre-100: #f3ecd9;
+    --color-ochre-700: #7d6222;
+
+    --color-accent: #4f6a35;
+    --color-accent-hover: #3d5229;
+    --color-accent-soft: #e6ecdb;
+    --color-accent-text: #3d5229;
+
+    --color-danger: #a8402c;
+    --color-danger-soft: #f8ece8;
+    --color-danger-border: #ecc7bd;
+
+    --color-field: #ffffff;
+    --color-raised: #ffffff;
+    --color-border-strong: #cfd2c4;
+    --color-border-stronger: #b8bcac;
+    --color-row-alt: #fafaf6;
+    --color-neutral-soft: #ecebe4;
+    --color-switch-off: #cbcebf;
+    --color-brand-ink: #2c3b22;
+
+    --shadow-card: 0 1px 2px rgba(30, 35, 26, 0.06), 0 4px 16px rgba(30, 35, 26, 0.05);
+  }
 }

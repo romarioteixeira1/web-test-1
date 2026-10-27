@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Gestão de clientes, materiais, coletas e transações para empresas de reciclagem." />
+    <!-- Installable app (PWA): see public/manifest.webmanifest and pwa/sw.js. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="EcoControl" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -11,6 +20,20 @@
       rel="stylesheet"
     />
     <title>EcoControl · Gestão de recicláveis</title>
+    <script>
+      // Set the theme before the first paint so the page never flashes the wrong one (see src/app/theme.ts).
+      ;(function () {
+        var theme
+        try {
+          theme = localStorage.getItem('ecocontrol-theme')
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        document.documentElement.dataset.theme = theme
+        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#1a1e16' : '#ffffff'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

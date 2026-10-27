@@ -1,0 +1,53 @@
+/* Installable app: update/install banner (src/pwa/PwaBanner.tsx) and installed-app tweaks. */
+@layer components {
+  .pwa-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    border: 1px solid var(--color-green-200);
+    box-shadow: var(--shadow-card);
+    flex-shrink: 0;
+  }
+  .pwa-banner img {
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .pwa-banner-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .pwa-banner-text strong {
+    font-size: 14px;
+  }
+  .pwa-banner-text span {
+    font-size: 12.5px;
+    color: var(--color-muted);
+  }
+  .pwa-banner .btn {
+    min-height: 40px;
+    padding: 0 14px;
+  }
+
+  .more-install {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  /* Installed app: no rubber-band scroll past the edges, no grey flash on tap. */
+  @media (display-mode: standalone) {
+    html,
+    body {
+      overscroll-behavior-y: none;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+}

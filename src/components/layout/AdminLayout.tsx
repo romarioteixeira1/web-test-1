@@ -5,6 +5,7 @@ import { MobileNav } from './MobileNav'
 import { Topbar } from './Topbar'
 import { Footer } from './Footer'
 import { HelpChat } from '../assistant/HelpChat'
+import { PwaBanner } from '../../pwa/PwaBanner'
 
 type Props = {
   children: ReactNode
@@ -33,6 +34,7 @@ export function AdminLayout({ children }: Props) {
       <div className="content">
         <Topbar />
         <main className="main" ref={mainRef}>
+          <PwaBanner />
           {children}
           <Footer onOpenHelp={() => setHelpOpen(true)} onBackToTop={backToTop} />
         </main>

@@ -1,14 +1,17 @@
 import { useLocation } from 'react-router'
 import { useApp } from '../../app/context'
+import { useTheme } from '../../app/theme'
 import { BrandLogo } from './BrandLogo'
-import { IconChevron, IconSearch } from './icons'
+import { IconChevron, IconMoon, IconSearch, IconSun } from './icons'
 import { findNavItem } from './navigation'
 
 export function Topbar() {
   const { pathname } = useLocation()
   const { searchPlaceholder, query, setQuery } = useApp()
+  const { theme, toggleTheme } = useTheme()
   const current = findNavItem(pathname)
   const isHome = pathname === '/'
+  const themeLabel = theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'
 
   return (
     <header className="topbar print:hidden">
@@ -21,26 +24,31 @@ export function Topbar() {
         <strong>{current?.label ?? 'Início'}</strong>
       </div>
 
-      {isHome ? (
-        <span className="status-pill">
-          <span className="dot" />
-          Tudo em dia
-        </span>
-      ) : (
-        searchPlaceholder && (
-          <div className="search">
-            <IconSearch size={16} />
-            <input
-              className="inp"
-              type="search"
-              aria-label="Buscar"
-              placeholder={searchPlaceholder}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-        )
-      )}
+      <div className="topbar-actions">
+        {isHome ? (
+          <span className="status-pill">
+            <span className="dot" />
+            Tudo em dia
+          </span>
+        ) : (
+          searchPlaceholder && (
+            <div className="search">
+              <IconSearch size={16} />
+              <input
+                className="inp"
+                type="search"
+                aria-label="Buscar"
+                placeholder={searchPlaceholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )
+        )}
+        <button type="button" className="icon theme-toggle" aria-label={themeLabel} title={themeLabel} onClick={toggleTheme}>
+          {theme === 'dark' ? <IconSun /> : <IconMoon />}
+        </button>
+      </div>
     </header>
   )
 }

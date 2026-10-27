@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { useApp } from '../../app/context'
-import { IconClose, IconGrid } from './icons'
+import { installApp, usePwa } from '../../pwa/pwa'
+import { IconClose, IconDownload, IconGrid } from './icons'
 import { findNavItem, navGroups, navItems } from './navigation'
 
 /** Screens that get their own tab; everything else lives under "Mais". */
@@ -12,6 +13,7 @@ const tabs = tabPaths.map((to) => navItems.find((item) => item.to === to)!)
 export function MobileNav() {
   const { pathname } = useLocation()
   const { counts } = useApp()
+  const { canInstall } = usePwa()
   // Remember which screen the sheet was opened on, so navigating anywhere closes it.
   const [openedAt, setOpenedAt] = useState<string | null>(null)
   const moreOpen = openedAt === pathname
@@ -59,6 +61,12 @@ export function MobileNav() {
                 </div>
               </div>
             ))}
+            {canInstall && (
+              <button type="button" className="btn more-install" onClick={() => void installApp()}>
+                <IconDownload size={18} />
+                Instalar aplicativo
+              </button>
+            )}
           </div>
         </div>
       )}

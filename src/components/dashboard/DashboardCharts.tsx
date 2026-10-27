@@ -98,7 +98,7 @@ export function CustomerDonut({ customers }: { customers: Customer[] }) {
           role="img"
           aria-label={`Clientes por tipo: ${counts.map((s) => `${s.n} ${s.label.toLowerCase()}`).join(', ')}`}
         >
-          <circle cx="95" cy="95" r="70" fill="none" stroke="#F3F5EE" strokeWidth="24" />
+          <circle cx="95" cy="95" r="70" fill="none" style={{ stroke: 'var(--color-green-50)' }} strokeWidth="24" />
           {arcs.map(
             (a) =>
               a.len > 0 && (

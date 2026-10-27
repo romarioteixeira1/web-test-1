@@ -52,7 +52,7 @@ export function TransactionReceiptPage() {
         </button>
       </div>
 
-      <article className="card w-full max-w-xl overflow-hidden print:max-w-none print:rounded-none print:border-none print:shadow-none">
+      <article className="card theme-light w-full max-w-xl overflow-hidden print:max-w-none print:rounded-none print:border-none print:shadow-none">
         <header className="flex items-center justify-between gap-4 border-b border-border bg-green-50 px-7 py-5">
           <img src="/eco-logo.png" alt="EcoControl" className="h-14 w-auto" />
           <div className="text-right text-xs text-muted">
