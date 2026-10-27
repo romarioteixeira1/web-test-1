@@ -12,6 +12,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * The app never scrolls sideways. `clip` rather than `hidden`, so the sticky top bar keeps working.
+ * Safety net: nothing should be wider than the screen in the first place.
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
+/*
+ * iPhone Safari zooms into any field with text under 16px when it's tapped, and the page stays
+ * zoomed and slides sideways afterwards. Unlayered, so it wins over .inp and the chat's field.
+ */
+@media (max-width: 900px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 code {
   font-family: var(--font-mono);
 }
