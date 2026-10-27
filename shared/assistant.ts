@@ -11,9 +11,31 @@ export type AssistantRequest = {
   page?: string
 }
 
+/** Screens an answer can link to; the chat shows an "Abrir …" button for each. */
+export const ASSISTANT_LINKS = [
+  '/',
+  '/empresa',
+  '/clientes',
+  '/materiais',
+  '/formas-pagamento',
+  '/coletas',
+  '/transacoes',
+  '/relatorios',
+  '/caixa',
+] as const
+
+export type AssistantLink = (typeof ASSISTANT_LINKS)[number]
+
 export type AssistantReply = {
   reply: string
+  /** Screens the answer talks about. */
+  links: AssistantLink[]
+  /** Short follow-up questions the user can tap. */
+  suggestions: string[]
 }
+
+export const ASSISTANT_MAX_LINKS = 3
+export const ASSISTANT_MAX_SUGGESTIONS = 3
 
 /** Limits that keep a single chat request small; the worker enforces them. */
 export const ASSISTANT_MAX_MESSAGES = 20

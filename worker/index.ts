@@ -1008,7 +1008,7 @@ app.post('/api/assistant', async (c) => {
 
   try {
     const reply = await askAssistant(apiKey, messages, typeof body?.page === 'string' ? body.page : undefined)
-    return c.json({ reply } satisfies AssistantReply)
+    return c.json(reply satisfies AssistantReply)
   } catch (err) {
     console.error('assistant error', err)
     return c.json({ error: 'O assistente está indisponível no momento. Tente de novo em instantes.' }, 502)
