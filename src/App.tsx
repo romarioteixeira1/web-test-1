@@ -1,4 +1,5 @@
-import { Route, Routes } from 'react-router'
+import { Navigate, Route, Routes } from 'react-router'
+import { useAuth } from './app/auth'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { CashFlowPage } from './pages/CashFlowPage'
 import { CollectionsPage } from './pages/CollectionsPage'
@@ -12,8 +13,11 @@ import { PaymentMethodsPage } from './pages/PaymentMethodsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { TransactionReceiptPage } from './pages/TransactionReceiptPage'
 import { TransactionsPage } from './pages/TransactionsPage'
+import { UsersPage } from './pages/UsersPage'
 
 function App() {
+  const { user } = useAuth()
+
   return (
     <AdminLayout>
       <Routes>
@@ -29,6 +33,7 @@ function App() {
         <Route path="/transacoes/:id/comprovante" element={<TransactionReceiptPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />
         <Route path="/caixa" element={<CashFlowPage />} />
+        <Route path="/usuarios" element={user.role === 'admin' ? <UsersPage /> : <Navigate to="/" replace />} />
       </Routes>
     </AdminLayout>
   )

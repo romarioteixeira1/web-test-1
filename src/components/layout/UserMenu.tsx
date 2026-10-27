@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { userRoleLabels } from '../../../shared/auth'
 import { useAuth } from '../../app/auth'
+import { initials } from '../../lib/format'
 import { ChangePasswordModal } from '../auth/ChangePasswordModal'
 import { IconKey, IconLogout } from './icons'
 
@@ -46,7 +48,9 @@ export function UserMenu() {
         <div className="user-menu-panel animate-scale-in" id={menuId} role="menu">
           <div className="user-menu-head">
             <strong className="truncate">{user.name}</strong>
-            <span className="truncate">@{user.username}</span>
+            <span className="truncate">
+              @{user.username} · {userRoleLabels[user.role]}
+            </span>
           </div>
           <button
             type="button"
@@ -70,11 +74,4 @@ export function UserMenu() {
       {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
     </div>
   )
-}
-
-/** "Romario Teixeira" → "RT", "Romario" → "RO". */
-function initials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean)
-  if (words.length > 1) return (words[0][0] + words[words.length - 1][0]).toUpperCase()
-  return (words[0] ?? '?').slice(0, 2).toUpperCase()
 }

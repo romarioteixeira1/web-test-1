@@ -6,6 +6,7 @@ import {
   IconChart,
   IconHome,
   IconReceipt,
+  IconShield,
   IconTruck,
   IconUsers,
   IconWallet,
@@ -19,6 +20,8 @@ export type NavItem = {
   icon: ComponentType<{ size?: number }>
   end?: boolean
   count?: CountKey
+  /** Only administrators see it (the users screen). */
+  adminOnly?: boolean
 }
 
 export const navGroups: { title: string; items: NavItem[] }[] = [
@@ -30,6 +33,7 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
       { to: '/clientes', label: 'Clientes', icon: IconUsers, count: 'customers' },
       { to: '/materiais', label: 'Materiais', icon: IconBox, count: 'materials' },
       { to: '/formas-pagamento', label: 'Formas de pagamento', icon: IconCard, count: 'paymentMethods' },
+      { to: '/usuarios', label: 'Usuários', icon: IconShield, adminOnly: true },
     ],
   },
   {
@@ -47,6 +51,13 @@ export const navGroups: { title: string; items: NavItem[] }[] = [
     ],
   },
 ]
+
+/** The menu for this user: administrators also get the users screen. */
+export function navGroupsFor(isAdmin: boolean) {
+  return navGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => isAdmin || !item.adminOnly) }))
+    .filter((group) => group.items.length)
+}
 
 export const navItems = navGroups.flatMap((group) => group.items.map((item) => ({ ...item, group: group.title })))
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
+import { useAuth } from '../../app/auth'
 import { useApp } from '../../app/context'
 import { installApp, usePwa } from '../../pwa/pwa'
 import { IconClose, IconDownload, IconGrid } from './icons'
-import { findNavItem, navGroups, navItems } from './navigation'
+import { findNavItem, navGroupsFor, navItems } from './navigation'
 
 /** Screens that get their own tab; everything else lives under "Mais". */
 const tabPaths = ['/', '/clientes', '/coletas', '/transacoes']
@@ -13,6 +14,7 @@ const tabs = tabPaths.map((to) => navItems.find((item) => item.to === to)!)
 export function MobileNav() {
   const { pathname } = useLocation()
   const { counts } = useApp()
+  const { user } = useAuth()
   const { canInstall } = usePwa()
   // Remember which screen the sheet was opened on, so navigating anywhere closes it.
   const [openedAt, setOpenedAt] = useState<string | null>(null)
@@ -45,7 +47,7 @@ export function MobileNav() {
                 <IconClose size={18} />
               </button>
             </div>
-            {navGroups.map((group) => (
+            {navGroupsFor(user.role === 'admin').map((group) => (
               <div key={group.title} className="more-group">
                 <span className="nav-title">{group.title}</span>
                 <div className="more-grid">

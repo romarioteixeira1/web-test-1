@@ -247,6 +247,16 @@ export function IconMoon(props: IconProps) {
   )
 }
 
+export function IconShield(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z" />
+      <circle cx="12" cy="10.5" r="2.2" />
+      <path d="M8.6 16.2a4 4 0 0 1 6.8 0" />
+    </Svg>
+  )
+}
+
 export function IconKey(props: IconProps) {
   return (
     <Svg {...props}>

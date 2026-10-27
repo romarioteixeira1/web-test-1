@@ -9,7 +9,7 @@ import {
   type User,
 } from '../shared/auth'
 
-type AuthEnv = {
+export type AuthEnv = {
   Bindings: { DB: D1Database }
   Variables: { user: User }
 }
@@ -93,12 +93,27 @@ async function currentUser(c: Context<AuthEnv>) {
   const token = getCookie(c, COOKIE_NAME)
   if (!token) return null
   return c.env.DB.prepare(
-    `SELECT u.id, u.name, u.username
+    `SELECT u.id, u.name, u.username, u.role
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.id = ? AND s.expires_at > datetime('now')`,
   )
     .bind(await sha256(token))
     .first<User>()
+}
+
+/** Hash of this request's session token, as stored in sessions.id. */
+export async function currentSessionId(c: Context<AuthEnv>) {
+  return sha256(getCookie(c, COOKIE_NAME) ?? '')
+}
+
+export function usernameError(username: string) {
+  if (!username) return 'Preencha o usuário.'
+  if (/\s/.test(username)) return 'O usuário não pode ter espaços.'
+  return null
+}
+
+export function passwordError(password: string) {
+  return password.length < MIN_PASSWORD_LENGTH ? `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` : null
 }
 
 async function hasUsers(db: D1Database) {
@@ -111,6 +126,12 @@ export const requireSession: MiddlewareHandler<AuthEnv> = async (c, next) => {
   const user = await currentUser(c)
   if (!user) return c.json({ error: 'Sua sessão expirou. Entre novamente.' }, 401)
   c.set('user', user)
+  return next()
+}
+
+/** For routes only administrators may use. Runs after requireSession. */
+export const requireAdmin: MiddlewareHandler<AuthEnv> = async (c, next) => {
+  if (c.get('user').role !== 'admin') return c.json({ error: 'Só administradores podem fazer isso.' }, 403)
   return next()
 }
 
@@ -128,7 +149,7 @@ auth.post('/login', async (c) => {
   const password = typeof body?.password === 'string' ? body.password : ''
   if (!username || !password) return c.json({ error: 'Informe usuário e senha.' }, 400)
 
-  const row = await c.env.DB.prepare('SELECT id, name, username, password_hash FROM users WHERE username = ?')
+  const row = await c.env.DB.prepare('SELECT id, name, username, role, password_hash FROM users WHERE username = ?')
     .bind(username)
     .first<User & { password_hash: string }>()
 
@@ -136,7 +157,7 @@ auth.post('/login', async (c) => {
   if (!row || !valid) return c.json({ error: 'Usuário ou senha incorretos.' }, 401)
 
   await createSession(c, row.id)
-  return c.json({ id: row.id, name: row.name, username: row.username } satisfies User)
+  return c.json({ id: row.id, name: row.name, username: row.username, role: row.role } satisfies User)
 })
 
 /** Creates the first account. Closed for good once any account exists. */
@@ -146,17 +167,15 @@ auth.post('/setup', async (c) => {
   const username = typeof body?.username === 'string' ? body.username.trim() : ''
   const password = typeof body?.password === 'string' ? body.password : ''
 
-  if (!name || !username) return c.json({ error: 'Preencha nome e usuário.' }, 400)
-  if (/\s/.test(username)) return c.json({ error: 'O usuário não pode ter espaços.' }, 400)
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return c.json({ error: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` }, 400)
-  }
+  if (!name) return c.json({ error: 'Preencha seu nome.' }, 400)
+  const invalid = usernameError(username) ?? passwordError(password)
+  if (invalid) return c.json({ error: invalid }, 400)
 
   // The NOT EXISTS check runs in the same statement as the insert, so two setups at once can't both win.
   const user = await c.env.DB.prepare(
-    `INSERT INTO users (name, username, password_hash)
-     SELECT ?1, ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM users)
-     RETURNING id, name, username`,
+    `INSERT INTO users (name, username, password_hash, role)
+     SELECT ?1, ?2, ?3, 'admin' WHERE NOT EXISTS (SELECT 1 FROM users)
+     RETURNING id, name, username, role`,
   )
     .bind(name, username, await hashPassword(password))
     .first<User>()
@@ -175,9 +194,8 @@ auth.post('/password', async (c) => {
   const body = await c.req.json<Partial<ChangePasswordInput>>().catch(() => null)
   const current = typeof body?.current_password === 'string' ? body.current_password : ''
   const next = typeof body?.new_password === 'string' ? body.new_password : ''
-  if (next.length < MIN_PASSWORD_LENGTH) {
-    return c.json({ error: `A nova senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` }, 400)
-  }
+  const invalid = passwordError(next)
+  if (invalid) return c.json({ error: invalid }, 400)
 
   const row = await c.env.DB.prepare('SELECT password_hash FROM users WHERE id = ?')
     .bind(user.id)
@@ -187,7 +205,7 @@ auth.post('/password', async (c) => {
     return c.json({ error: 'A senha atual está incorreta.' }, 400)
   }
 
-  const sessionId = await sha256(getCookie(c, COOKIE_NAME) ?? '')
+  const sessionId = await currentSessionId(c)
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(await hashPassword(next), user.id),
     c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND id <> ?').bind(user.id, sessionId),

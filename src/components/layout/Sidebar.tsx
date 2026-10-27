@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router'
 import { BrandLogo } from './BrandLogo'
+import { useAuth } from '../../app/auth'
 import { useApp } from '../../app/context'
 import { abbreviation } from '../../lib/format'
-import { navGroups } from './navigation'
+import { navGroupsFor } from './navigation'
 
 export function Sidebar() {
   const { counts, company } = useApp()
+  const { user } = useAuth()
 
   return (
     <nav className="sidebar print:hidden" aria-label="Menu principal">
@@ -13,7 +15,7 @@ export function Sidebar() {
         <BrandLogo />
       </div>
 
-      {navGroups.map((group) => (
+      {navGroupsFor(user.role === 'admin').map((group) => (
         <div key={group.title} className="nav-group">
           <span className="nav-title">{group.title}</span>
           {group.items.map(({ to, label, icon: Icon, end, count }) => (
