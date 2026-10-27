@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import App from './App.tsx'
 import { AppProvider } from './app/AppProvider.tsx'
+import { AuthGate } from './app/AuthGate.tsx'
 import { setupPwa } from './pwa/pwa.ts'
 
 setupPwa()
@@ -11,9 +12,11 @@ setupPwa()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
+      <AuthGate>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </AuthGate>
     </BrowserRouter>
   </StrictMode>,
 )

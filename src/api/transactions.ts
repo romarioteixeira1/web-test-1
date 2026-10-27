@@ -1,19 +1,5 @@
 import type { TransactionInput, TransactionWithDetails } from '../../shared/transaction'
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  })
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null
-    throw new Error(body?.error ?? `Erro ${res.status}`)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { request } from './http'
 
 export function listTransactions(filters?: { customerId?: number; status?: string }) {
   const params = new URLSearchParams()

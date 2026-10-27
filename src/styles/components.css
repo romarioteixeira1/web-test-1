@@ -232,7 +232,8 @@
     min-width: 0;
     max-width: 60%;
   }
-  .theme-toggle {
+  .theme-toggle,
+  .logout-button {
     flex-shrink: 0;
   }
   .search {

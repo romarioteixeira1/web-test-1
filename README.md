@@ -50,6 +50,16 @@ npm run db:migrate:local   # para continuar testando localmente
 npm run db:migrate:remote  # para aplicar em produção antes/depois do deploy
 ```
 
+## Login
+
+O app inteiro (telas e `/api/*`) exige login com usuário e senha (`worker/auth.ts`). As senhas ficam só como hash PBKDF2 no D1, e a sessão dura 30 dias num cookie `HttpOnly`.
+
+- **Primeiro acesso:** enquanto não existe nenhum usuário, a tela de login vira "Criar acesso" e quem abrir o app cria a conta de administrador. Depois de aplicar a migração `0011` em produção, abra o app e crie a sua conta logo em seguida.
+- **Esqueci a senha:** apague os usuários para a tela de primeiro acesso voltar:
+  ```bash
+  npx wrangler d1 execute web-test-1-db --remote --command "DELETE FROM users"
+  ```
+
 ## Deploy na Cloudflare
 
 1. Autentique o Wrangler (uma única vez): `npx wrangler login`

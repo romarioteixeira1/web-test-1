@@ -1,19 +1,5 @@
 import type { Customer, CustomerInput, CustomerStats } from '../../shared/customer'
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  })
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null
-    throw new Error(body?.error ?? `Erro ${res.status}`)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { request } from './http'
 
 export function listCustomers(query?: string) {
   const search = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''

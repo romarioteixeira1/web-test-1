@@ -11,6 +11,7 @@ import type {
 import type { CollectionInput, CollectionType, CollectionWithCustomer } from '../shared/collection'
 import type { AssistantReply, AssistantRequest } from '../shared/assistant'
 import { askAssistant, sanitizeMessages } from './assistant'
+import { auth, requireSession } from './auth'
 import type { Company, CompanyInput } from '../shared/company'
 import {
   materialCategories,
@@ -43,6 +44,9 @@ type Bindings = {
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
+
+app.route('/api/auth', auth)
+app.use('/api/*', requireSession)
 
 /** Returns the code only if it matches a registered payment method, so free text never reaches the database. */
 async function knownPaymentCode(db: D1Database, code: unknown): Promise<PaymentMethod | null> {
