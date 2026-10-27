@@ -1,12 +1,10 @@
-import { useState } from 'react'
 import { useLocation } from 'react-router'
-import { useAuth } from '../../app/auth'
-import { ChangePasswordModal } from '../auth/ChangePasswordModal'
 import { useApp } from '../../app/context'
 import { useTheme } from '../../app/theme'
 import { BrandLogo } from './BrandLogo'
-import { IconChevron, IconKey, IconLogout, IconMoon, IconSearch, IconSun } from './icons'
+import { IconChevron, IconMoon, IconSearch, IconSun } from './icons'
 import { findNavItem } from './navigation'
+import { UserMenu } from './UserMenu'
 
 export function Topbar() {
   const { pathname } = useLocation()
@@ -15,9 +13,6 @@ export function Topbar() {
   const current = findNavItem(pathname)
   const isHome = pathname === '/'
   const themeLabel = theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'
-  const { user, logout } = useAuth()
-  const logoutLabel = `Sair (${user.name})`
-  const [passwordOpen, setPasswordOpen] = useState(false)
 
   return (
     <header className="topbar print:hidden">
@@ -54,20 +49,8 @@ export function Topbar() {
         <button type="button" className="icon theme-toggle" aria-label={themeLabel} title={themeLabel} onClick={toggleTheme}>
           {theme === 'dark' ? <IconSun /> : <IconMoon />}
         </button>
-        <button
-          type="button"
-          className="icon logout-button"
-          aria-label="Trocar senha"
-          title="Trocar senha"
-          onClick={() => setPasswordOpen(true)}
-        >
-          <IconKey />
-        </button>
-        <button type="button" className="icon logout-button" aria-label={logoutLabel} title={logoutLabel} onClick={() => void logout()}>
-          <IconLogout />
-        </button>
+        <UserMenu />
       </div>
-      {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
     </header>
   )
 }
