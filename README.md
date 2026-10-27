@@ -39,6 +39,7 @@ npm run lint             # lint com Oxlint
 npm run deploy           # build + wrangler deploy (requer login: npx wrangler login)
 npm run db:migrate:local # aplica as migrações no D1 local (usado pelo `npm run dev`)
 npm run db:migrate:remote # aplica as migrações no D1 remoto (produção)
+npm run db:seed:local    # cadastra os dados de teste de scripts/seed-ecocontrol.json no D1 local (pode rodar de novo, não duplica)
 ```
 
 ## Banco de dados (D1)
