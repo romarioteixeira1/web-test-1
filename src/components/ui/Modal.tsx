@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { IconClose } from '../layout/icons'
 
 type Props = {
@@ -46,7 +47,9 @@ export function Modal({ title, subtitle = 'Campos com * são obrigatórios.', su
     if (!submitting) onSubmit()
   }
 
-  return (
+  // Rendered at the end of <body>, so a parent's stacking context (like the sticky top bar) can't put
+  // the dialog under the phone's bottom tab bar.
+  return createPortal(
     <div
       className="overlay animate-fade-in"
       onMouseDown={(e) => {
@@ -82,7 +85,8 @@ export function Modal({ title, subtitle = 'Campos com * são obrigatórios.', su
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
