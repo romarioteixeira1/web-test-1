@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { MIN_PASSWORD_LENGTH, type User } from '../../shared/auth'
-import { login, setupAccount } from '../api/auth'
+import { login, register, setupAccount } from '../api/auth'
 import { errorMessage } from '../lib/format'
 
 type Props = {
@@ -9,14 +9,35 @@ type Props = {
   onSignedIn: (user: User) => void
 }
 
+const copy = {
+  login: { title: 'Entrar', lead: 'Que bom ter você de volta ao EcoControl', submit: 'Entrar' },
+  register: { title: 'Criar conta', lead: 'Cadastre-se para começar a usar o EcoControl.', submit: 'Criar conta e entrar' },
+  setup: {
+    title: 'Criar acesso',
+    lead: 'Primeiro acesso: crie o usuário e a senha de administrador do EcoControl.',
+    submit: 'Criar acesso e entrar',
+  },
+}
+
 export function LoginPage({ mode, onSignedIn }: Props) {
+  const [registering, setRegistering] = useState(false)
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const isSetup = mode === 'setup'
+  const view = mode === 'setup' ? 'setup' : registering ? 'register' : 'login'
+  /** Setup and sign-up both create an account, so both ask for a name and a confirmed password. */
+  const isSetup = view !== 'login'
+  const text = copy[view]
+
+  function switchTo(next: boolean) {
+    setRegistering(next)
+    setPassword('')
+    setConfirm('')
+    setError(null)
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -34,7 +55,12 @@ export function LoginPage({ mode, onSignedIn }: Props) {
     setSubmitting(true)
     setError(null)
     try {
-      const user = isSetup ? await setupAccount({ name, username, password }) : await login({ username, password })
+      const user =
+        view === 'setup'
+          ? await setupAccount({ name, username, password })
+          : view === 'register'
+            ? await register({ name, username, password })
+            : await login({ username, password })
       onSignedIn(user)
     } catch (err) {
       setError(errorMessage(err, 'Não foi possível entrar.'))
@@ -53,12 +79,8 @@ export function LoginPage({ mode, onSignedIn }: Props) {
         </div>
 
         <div className="auth-title">
-          <h1>{isSetup ? 'Criar acesso' : 'Entrar'}</h1>
-          <p>
-            {isSetup
-              ? 'Primeiro acesso: crie o usuário e a senha de administrador do EcoControl.'
-              : 'Que bom ter você de volta ao EcoControl'}
-          </p>
+          <h1>{text.title}</h1>
+          <p>{text.lead}</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -122,7 +144,7 @@ export function LoginPage({ mode, onSignedIn }: Props) {
           )}
 
           <button type="submit" className="auth-submit" disabled={submitting}>
-            {submitting ? 'Entrando…' : isSetup ? 'Criar acesso e entrar' : 'Entrar'}
+            {submitting ? 'Entrando…' : text.submit}
           </button>
         </form>
 
@@ -130,6 +152,15 @@ export function LoginPage({ mode, onSignedIn }: Props) {
           <LockIcon />
           <span>Seus dados de acesso ficam protegidos.</span>
         </p>
+
+        {view !== 'setup' && (
+          <p className="auth-switch">
+            {registering ? 'Já tem uma conta?' : 'Não tem uma conta?'}
+            <button type="button" onClick={() => switchTo(!registering)}>
+              {registering ? 'Entrar' : 'Criar conta'}
+            </button>
+          </p>
+        )}
       </main>
     </div>
   )

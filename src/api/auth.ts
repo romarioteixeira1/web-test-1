@@ -14,6 +14,11 @@ export function setupAccount(input: SetupInput) {
   return request<User>('/api/auth/setup', { method: 'POST', body: JSON.stringify(input) })
 }
 
+/** Self sign-up from the login screen; the new account is an `operador`. */
+export function register(input: SetupInput) {
+  return request<User>('/api/auth/register', { method: 'POST', body: JSON.stringify(input) })
+}
+
 export function changePassword(input: ChangePasswordInput) {
   return request<void>('/api/auth/password', { method: 'POST', body: JSON.stringify(input) })
 }

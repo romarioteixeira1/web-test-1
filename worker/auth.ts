@@ -186,6 +186,36 @@ auth.post('/setup', async (c) => {
   return c.json(user)
 })
 
+/** Self sign-up from the login screen: anyone can create an `operador` account. Admins still come from setup or the users screen. */
+auth.post('/register', async (c) => {
+  const body = await c.req.json<Partial<SetupInput>>().catch(() => null)
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const username = typeof body?.username === 'string' ? body.username.trim() : ''
+  const password = typeof body?.password === 'string' ? body.password : ''
+
+  if (!name) return c.json({ error: 'Preencha seu nome.' }, 400)
+  const invalid = usernameError(username) ?? passwordError(password)
+  if (invalid) return c.json({ error: invalid }, 400)
+
+  // Until the first admin exists, the only way in is setup; otherwise an operador could end up with no admin above it.
+  if (!(await hasUsers(c.env.DB))) return c.json({ error: 'Faça o primeiro acesso para criar o administrador.' }, 409)
+
+  // EXISTS repeats the check above inside the insert, so a register racing the setup can't become the first account.
+  const user = await c.env.DB.prepare(
+    `INSERT INTO users (name, username, password_hash, role)
+     SELECT ?1, ?2, ?3, 'operador' WHERE EXISTS (SELECT 1 FROM users)
+     ON CONFLICT (username) DO NOTHING
+     RETURNING id, name, username, role`,
+  )
+    .bind(name, username, await hashPassword(password))
+    .first<User>()
+
+  if (!user) return c.json({ error: `O usuário "${username}" já está em uso. Escolha outro.` }, 409)
+
+  await createSession(c, user.id)
+  return c.json(user, 201)
+})
+
 /** Changes the signed-in user's password and signs out their other devices. */
 auth.post('/password', async (c) => {
   const user = await currentUser(c)
