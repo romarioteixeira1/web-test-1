@@ -1,16 +1,15 @@
-/* Login and first-access screens (src/pages/LoginPage.tsx, src/app/AuthGate.tsx). */
+/* Login and first-access screens (src/pages/LoginPage.tsx, src/app/AuthGate.tsx). Layout from login.html. */
 @layer components {
   .auth-screen {
     min-height: 100vh;
     min-height: 100svh;
     display: grid;
     place-items: center;
-    padding: 24px 16px;
-    background:
-      radial-gradient(circle at 15% 10%, var(--color-green-100), transparent 45%),
-      radial-gradient(circle at 90% 90%, var(--color-ochre-100), transparent 40%),
-      var(--color-bg);
+    padding: 48px 16px;
+    background: var(--color-bg);
   }
+
+  /* Loading / error card shown by AuthGate before the login screen. */
   .auth-card {
     width: 100%;
     max-width: 400px;
@@ -27,17 +26,111 @@
     align-items: center;
     text-align: center;
   }
-  .auth-head h1 {
-    margin: 4px 0 4px;
+  .auth-card .btn {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .auth-login {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .auth-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  .auth-logo-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--color-green-600);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-title {
+    text-align: center;
+  }
+  .auth-title h1 {
+    margin: 0 0 8px;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  .auth-title p {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  .auth-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .auth-form label {
+    font-size: 13px;
     font-weight: 700;
     color: var(--color-ink);
   }
-  .auth-head p {
-    margin: 0;
-    font-size: 14px;
+  .auth-form input {
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-bg);
+    font: inherit;
+    font-size: 15px;
+    color: var(--color-ink);
+  }
+  .auth-form input::placeholder {
     color: var(--color-muted);
   }
+  .auth-form input:focus {
+    outline: 2px solid var(--color-green-600);
+    border-color: transparent;
+  }
+
+  .auth-submit {
+    margin-top: 4px;
+    height: 46px;
+    border: none;
+    border-radius: var(--radius-control);
+    background: var(--color-green-600);
+    color: var(--color-white);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .auth-submit:hover:not(:disabled) {
+    background: var(--color-green-700);
+  }
+  .auth-submit:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+
   .auth-error {
     margin: 0;
     padding: 10px 12px;
@@ -48,14 +141,26 @@
     font-size: 13px;
     font-weight: 500;
   }
-  .auth-card .btn {
-    width: 100%;
-    margin-top: 4px;
+
+  .auth-note {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+  .auth-note svg {
+    color: var(--color-green-600);
   }
 
   @media (max-width: 480px) {
     .auth-card {
       padding: 24px 20px;
+    }
+    .auth-title h1 {
+      font-size: 30px;
     }
   }
 }
