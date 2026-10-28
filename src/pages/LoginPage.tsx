@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { MIN_PASSWORD_LENGTH, type User } from '../../shared/auth'
 import { login, register, setupAccount } from '../api/auth'
+import { BrandLogo } from '../components/layout/BrandLogo'
 import { errorMessage } from '../lib/format'
 
 type Props = {
@@ -71,12 +72,7 @@ export function LoginPage({ mode, onSignedIn }: Props) {
   return (
     <div className="auth-screen">
       <main className="auth-login">
-        <div className="auth-logo" role="img" aria-label="EcoControl">
-          <span className="auth-logo-mark" aria-hidden="true">
-            <RecycleIcon />
-          </span>
-          <span aria-hidden="true">EcoControl</span>
-        </div>
+        <BrandLogo />
 
         <div className="auth-title">
           <h1>{text.title}</h1>
@@ -163,28 +159,6 @@ export function LoginPage({ mode, onSignedIn }: Props) {
         )}
       </main>
     </div>
-  )
-}
-
-function RecycleIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7 19H4.8a1.8 1.8 0 0 1-1.6-2.7L6 11.5" />
-      <path d="M11 19h8.2a1.8 1.8 0 0 0 1.6-2.7l-1.3-2.3" />
-      <path d="M14 16l-3 3 3 3" />
-      <path d="M8.3 7.4l1.6-2.8a1.8 1.8 0 0 1 3.1 0l3.7 6.4" />
-      <path d="M15.4 11.2l1.3-4.2 4.2 1.3" />
-      <path d="M4.4 9.9L8.3 7.4 9.6 11.6" />
-    </svg>
   )
 }
 

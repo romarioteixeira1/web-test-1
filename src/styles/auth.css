@@ -40,26 +40,6 @@
     gap: 28px;
   }
 
-  .auth-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--color-ink);
-  }
-  .auth-logo-mark {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    background: var(--color-green-600);
-    color: var(--color-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   .auth-title {
     text-align: center;
   }
