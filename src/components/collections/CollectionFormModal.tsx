@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { emptyCollectionInput, materialTypes, type CollectionInput } from '../../../shared/collection'
 import type { Customer } from '../../../shared/customer'
 import { parseDecimal, todayIso, toDecimalInput } from '../../lib/format'
+import { CustomerPicker } from '../customers/CustomerPicker'
 import { ChoiceGroup, Field, Modal } from '../ui/Modal'
 
 const typeOptions = [
@@ -75,22 +76,14 @@ export function CollectionFormModal({ mode, initialValue, customers, submitting,
     >
       <ChoiceGroup label="Tipo de coleta" value={form.type} options={typeOptions} onChange={(v) => set('type', v)} />
 
-      <Field label="Cliente *" htmlFor="collection-customer">
-        <select
-          id="collection-customer"
-          className={`inp ${invalid === 'customer' ? 'invalid' : ''}`}
-          value={form.customer_id ?? ''}
-          disabled={mode === 'edit'}
-          onChange={(e) => set('customer_id', e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">Selecione um cliente</option>
-          {customers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <CustomerPicker
+        id="collection-customer"
+        customers={customers}
+        value={form.customer_id}
+        invalid={invalid === 'customer'}
+        disabled={mode === 'edit'}
+        onChange={(id) => set('customer_id', id)}
+      />
 
       <Field label="Descrição *" htmlFor="collection-description">
         <input

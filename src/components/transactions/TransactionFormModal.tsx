@@ -10,6 +10,7 @@ import {
 } from '../../../shared/transaction'
 import type { Customer } from '../../../shared/customer'
 import { brl, parseDecimal, todayIso, toDecimalInput } from '../../lib/format'
+import { CustomerPicker } from '../customers/CustomerPicker'
 import { ChoiceGroup, Field, Modal } from '../ui/Modal'
 
 const typeOptions = [
@@ -130,22 +131,14 @@ export function TransactionFormModal({
       <ChoiceGroup label="Tipo de transação" value={form.transaction_type} options={typeOptions} onChange={handleTypeChange} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Cliente *" htmlFor="transaction-customer">
-          <select
-            id="transaction-customer"
-            className={`inp ${invalid === 'customer' ? 'invalid' : ''}`}
-            value={form.customer_id ?? ''}
-            disabled={Boolean(lockCustomerId)}
-            onChange={(e) => set('customer_id', e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">Selecione um cliente</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <CustomerPicker
+          id="transaction-customer"
+          customers={customers}
+          value={form.customer_id}
+          invalid={invalid === 'customer'}
+          disabled={Boolean(lockCustomerId)}
+          onChange={(id) => set('customer_id', id)}
+        />
         <Field label="Material *" htmlFor="transaction-material">
           <select
             id="transaction-material"

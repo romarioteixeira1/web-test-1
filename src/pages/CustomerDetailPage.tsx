@@ -106,6 +106,7 @@ export function CustomerDetailPage() {
         ]}
       >
         <div className="hero-tags">
+          <span className="tag mono">{customer.code}</span>
           <span className="tag">{relationshipTypeLabels[customer.relationship_type]}</span>
           <span className="tag">{customer.person_type === 'juridica' ? 'Pessoa jurídica' : 'Pessoa física'}</span>
           {customer.status === 'inactive' && <span className="tag">Inativo</span>}

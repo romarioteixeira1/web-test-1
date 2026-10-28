@@ -20,6 +20,7 @@ export type CollectionInput = Omit<Collection, 'id' | 'customer_id' | 'created_a
 
 export interface CollectionWithCustomer extends Collection {
   customer_name: string
+  customer_code: string
 }
 
 export const emptyCollectionInput: CollectionInput = {

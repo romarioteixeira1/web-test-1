@@ -53,7 +53,7 @@ export function CustomerTable({ customers, onEdit, onDelete }: Props) {
                         </Link>
                       </strong>
                       <span>
-                        {c.email || 'sem e-mail'}
+                        <span className="mono">{c.code}</span> · {c.email || 'sem e-mail'}
                         {c.status === 'inactive' && ' · Inativo'}
                       </span>
                     </div>

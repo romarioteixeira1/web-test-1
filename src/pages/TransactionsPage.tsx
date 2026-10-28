@@ -50,7 +50,7 @@ export function TransactionsPage() {
   const visible = transactions.filter(
     (t) =>
       (filter === 'all' || t.payment_status === filter) &&
-      matches(query, t.customer_name, t.material_name, t.notes, t.payment_method_name),
+      matches(query, t.customer_name, t.customer_code, t.material_name, t.notes, t.payment_method_name),
   )
 
   async function handleSubmit(input: TransactionInput) {

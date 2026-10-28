@@ -42,7 +42,7 @@ export function CustomersPage() {
   const visible = customers.filter(
     (c) =>
       (filter === 'all' || c.relationship_type === filter || c.relationship_type === 'ambos') &&
-      matches(query, c.name, c.document, c.city, c.email, c.company_name),
+      matches(query, c.name, c.code, c.document, c.city, c.email, c.company_name),
   )
 
   async function handleSubmit(input: CustomerInput) {

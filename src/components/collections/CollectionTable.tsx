@@ -51,6 +51,7 @@ export function CollectionTable({ collections, onEdit, onDelete }: Props) {
                 <Link to={`/clientes/${item.customer_id}`} className="link">
                   {item.customer_name}
                 </Link>
+                <span className="mono block text-xs text-muted">{item.customer_code}</span>
               </td>
               <td>
                 <span className={`tag ${item.type === 'material' ? 'tone-green' : 'tone-light'}`}>

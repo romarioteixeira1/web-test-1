@@ -63,6 +63,7 @@ export function TransactionTable({ transactions, showCustomer = true, onEdit, on
                   <Link to={`/clientes/${t.customer_id}`} className="link font-semibold">
                     {t.customer_name}
                   </Link>
+                  <span className="mono block text-xs text-muted">{t.customer_code}</span>
                 </td>
               )}
               <td>

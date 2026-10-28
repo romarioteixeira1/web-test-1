@@ -40,7 +40,7 @@ export function CollectionsPage() {
   const visible = collections.filter(
     (c) =>
       (filter === 'all' || c.type === filter) &&
-      matches(query, c.description, c.material_type, c.notes, c.customer_name),
+      matches(query, c.description, c.material_type, c.notes, c.customer_name, c.customer_code),
   )
 
   async function handleSubmit(input: CollectionInput) {

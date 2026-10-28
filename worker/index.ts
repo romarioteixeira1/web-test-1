@@ -97,7 +97,7 @@ app.get('/api/customers', async (c) => {
   const q = c.req.query('q')?.trim()
   const statement = q
     ? c.env.DB.prepare(
-        'SELECT * FROM customers WHERE name LIKE ?1 OR email LIKE ?1 OR document LIKE ?1 ORDER BY name',
+        'SELECT * FROM customers WHERE name LIKE ?1 OR code LIKE ?1 OR email LIKE ?1 OR document LIKE ?1 ORDER BY name',
       ).bind(`%${q}%`)
     : c.env.DB.prepare('SELECT * FROM customers ORDER BY name')
 
@@ -246,7 +246,7 @@ function normalizeCollection(body: Partial<CollectionInput>) {
 }
 
 const collectionSelect = `
-  SELECT col.*, c.name AS customer_name
+  SELECT col.*, c.name AS customer_name, c.code AS customer_code
   FROM collections col
   JOIN customers c ON c.id = col.customer_id
 `
@@ -516,7 +516,7 @@ function normalizeTransaction(body: Partial<TransactionInput>, onTerm: boolean) 
 }
 
 const transactionSelect = `
-  SELECT t.*, c.name AS customer_name, mt.name AS material_name, mt.unit AS material_unit,
+  SELECT t.*, c.name AS customer_name, c.code AS customer_code, mt.name AS material_name, mt.unit AS material_unit,
     pm.name AS payment_method_name
   FROM transactions t
   JOIN customers c ON c.id = t.customer_id

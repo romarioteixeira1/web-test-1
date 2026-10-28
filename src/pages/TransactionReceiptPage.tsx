@@ -81,7 +81,9 @@ export function TransactionReceiptPage() {
 
           <div>
             <p className="lbl">Cliente</p>
-            <p className="text-base font-semibold text-ink">{t.customer_name}</p>
+            <p className="text-base font-semibold text-ink">
+              {t.customer_name} <span className="mono text-sm font-normal text-muted">{t.customer_code}</span>
+            </p>
             <p className="text-sm text-muted">
               {[customer.document, customer.phone, customer.email].filter(Boolean).join(' · ') || '—'}
             </p>
