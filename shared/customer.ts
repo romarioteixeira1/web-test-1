@@ -1,10 +1,13 @@
 export type CustomerStatus = 'active' | 'inactive'
 export type PersonType = 'fisica' | 'juridica'
 export type RelationshipType = 'fornecedor' | 'comprador' | 'ambos'
-export type PaymentMethod = 'pix' | 'dinheiro' | 'transferencia' | 'cartao_debito' | 'cartao_credito'
+/** Código de uma forma de pagamento cadastrada em payment_methods (ex.: 'pix'). */
+export type PaymentMethod = string
 
 export interface Customer {
   id: number
+  /** Gerado pelo banco a partir do id (ex.: CLI-0001); nunca muda. */
+  code: string
   name: string
   document: string | null
   birth_date: string | null
@@ -28,7 +31,7 @@ export interface Customer {
   updated_at: string
 }
 
-export type CustomerInput = Omit<Customer, 'id' | 'created_at' | 'updated_at'>
+export type CustomerInput = Omit<Customer, 'id' | 'code' | 'created_at' | 'updated_at'>
 
 export interface CustomerStats {
   total: number
@@ -65,10 +68,23 @@ export const relationshipTypeLabels: Record<RelationshipType, string> = {
   ambos: 'Ambos',
 }
 
-export const paymentMethodLabels: Record<PaymentMethod, string> = {
+/** Nomes das formas de pagamento originais, usados como reserva quando o nome cadastrado não vem da API. */
+export const paymentMethodLabels: Record<string, string> = {
   pix: 'Pix',
   dinheiro: 'Dinheiro',
   transferencia: 'Transferência',
   cartao_debito: 'Cartão de débito',
   cartao_credito: 'Cartão de crédito',
+}
+
+/** Como o cliente aparece nas listas de escolha: código e nome. */
+export function customerLabel(customer: Pick<Customer, 'code' | 'name'>) {
+  return `${customer.code} · ${customer.name}`
+}
+
+/** Acha o cliente pelo código digitado: aceita 'CLI-0012', 'cli12' ou só '12'. */
+export function findCustomerByCode<T extends Pick<Customer, 'code'>>(customers: T[], typed: string) {
+  const number = Number(typed.replace(/\D/g, ''))
+  if (!number) return undefined
+  return customers.find((c) => Number(c.code.replace(/\D/g, '')) === number)
 }

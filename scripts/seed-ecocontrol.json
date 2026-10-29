@@ -1,0 +1,689 @@
+{
+  "_info": "Dados FICTÍCIOS de teste do EcoControl. CPFs/CNPJs com dígitos verificadores inválidos de propósito; e-mails no domínio reservado example.com. Ordem de cadastro: formas_pagamento -> materiais -> clientes -> transacoes -> coletas. Referências entre itens são feitas pelo NOME.",
+  "formas_pagamento": [
+    {
+      "nome": "Pix",
+      "pagamento": "a_vista",
+      "usar_em_compras": true,
+      "usar_em_vendas": true,
+      "ativo": true
+    },
+    {
+      "nome": "Dinheiro",
+      "pagamento": "a_vista",
+      "usar_em_compras": true,
+      "usar_em_vendas": true,
+      "ativo": true
+    },
+    {
+      "nome": "Transferência bancária",
+      "pagamento": "a_vista",
+      "usar_em_compras": true,
+      "usar_em_vendas": true,
+      "ativo": true
+    },
+    {
+      "nome": "Boleto 30 dias",
+      "pagamento": "a_prazo",
+      "usar_em_compras": false,
+      "usar_em_vendas": true,
+      "ativo": true
+    },
+    {
+      "nome": "Cartão de crédito",
+      "pagamento": "a_prazo",
+      "usar_em_compras": false,
+      "usar_em_vendas": true,
+      "ativo": true
+    }
+  ],
+  "materiais": [
+    {
+      "nome": "Cobre misto",
+      "categoria": "Metal",
+      "unidade": "kg",
+      "preco_compra": 38.0,
+      "preco_venda": 44.5,
+      "ativo": true
+    },
+    {
+      "nome": "Alumínio latinha",
+      "categoria": "Metal",
+      "unidade": "kg",
+      "preco_compra": 6.2,
+      "preco_venda": 7.8,
+      "ativo": true
+    },
+    {
+      "nome": "Alumínio perfil",
+      "categoria": "Metal",
+      "unidade": "kg",
+      "preco_compra": 8.5,
+      "preco_venda": 10.4,
+      "ativo": true
+    },
+    {
+      "nome": "Ferro / sucata pesada",
+      "categoria": "Metal",
+      "unidade": "kg",
+      "preco_compra": 0.85,
+      "preco_venda": 1.3,
+      "ativo": true
+    },
+    {
+      "nome": "Inox",
+      "categoria": "Metal",
+      "unidade": "kg",
+      "preco_compra": 4.5,
+      "preco_venda": 6.0,
+      "ativo": true
+    },
+    {
+      "nome": "Papelão",
+      "categoria": "Papel",
+      "unidade": "kg",
+      "preco_compra": 0.55,
+      "preco_venda": 0.9,
+      "ativo": true
+    },
+    {
+      "nome": "Papel branco",
+      "categoria": "Papel",
+      "unidade": "kg",
+      "preco_compra": 0.7,
+      "preco_venda": 1.1,
+      "ativo": true
+    },
+    {
+      "nome": "PET transparente",
+      "categoria": "Plástico",
+      "unidade": "kg",
+      "preco_compra": 2.3,
+      "preco_venda": 3.2,
+      "ativo": true
+    },
+    {
+      "nome": "PEAD (embalagem de produto de limpeza)",
+      "categoria": "Plástico",
+      "unidade": "kg",
+      "preco_compra": 1.8,
+      "preco_venda": 2.6,
+      "ativo": true
+    },
+    {
+      "nome": "Vidro inteiro",
+      "categoria": "Vidro",
+      "unidade": "kg",
+      "preco_compra": 0.12,
+      "preco_venda": 0.25,
+      "ativo": true
+    },
+    {
+      "nome": "Bateria automotiva",
+      "categoria": "Eletrônico",
+      "unidade": "unidade",
+      "preco_compra": 12.0,
+      "preco_venda": 17.0,
+      "ativo": true
+    },
+    {
+      "nome": "Placa eletrônica",
+      "categoria": "Eletrônico",
+      "unidade": "kg",
+      "preco_compra": 9.0,
+      "preco_venda": 14.0,
+      "ativo": true
+    }
+  ],
+  "clientes": [
+    {
+      "nome": "Depósito São Judas Ltda",
+      "tipo": "ambos",
+      "pessoa": "juridica",
+      "documento": "93.786.579/0001-80",
+      "telefone": "(31) 3398-4521",
+      "email": "compras.saojudas@example.com",
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua das Acácias",
+        "numero": "245",
+        "complemento": null,
+        "bairro": "Bairro Industrial",
+        "cidade": "Contagem",
+        "cep": "32235-140",
+        "uf": "MG"
+      },
+      "observacoes": "Compra e revende sucata mista",
+      "ativo": true
+    },
+    {
+      "nome": "Reciclagem Minas Gerais Ltda",
+      "tipo": "comprador",
+      "pessoa": "juridica",
+      "documento": "75.432.319/0001-35",
+      "telefone": "(31) 3555-0198",
+      "email": "financeiro.recmg@example.com",
+      "forma_pagamento_preferida": "Boleto 30 dias",
+      "endereco": {
+        "rua": "Avenida Industrial",
+        "numero": "1800",
+        "complemento": null,
+        "bairro": "Distrito Industrial",
+        "cidade": "Betim",
+        "cep": "32669-120",
+        "uf": "MG"
+      },
+      "observacoes": "Compra papelão e PET em fardos",
+      "ativo": true
+    },
+    {
+      "nome": "Metalúrgica Vale do Aço S.A.",
+      "tipo": "comprador",
+      "pessoa": "juridica",
+      "documento": "48.757.491/0001-86",
+      "telefone": "(31) 3824-7710",
+      "email": "suprimentos.valeaco@example.com",
+      "forma_pagamento_preferida": "Transferência bancária",
+      "endereco": {
+        "rua": "Rua da Siderurgia",
+        "numero": "90",
+        "complemento": null,
+        "bairro": "Centro",
+        "cidade": "Ipatinga",
+        "cep": "35160-025",
+        "uf": "MG"
+      },
+      "observacoes": "Compra ferro e cobre em volume",
+      "ativo": true
+    },
+    {
+      "nome": "Papelão Forte Embalagens Ltda",
+      "tipo": "comprador",
+      "pessoa": "juridica",
+      "documento": "18.625.276/0001-60",
+      "telefone": "(31) 3427-3302",
+      "email": "compras.papelaoforte@example.com",
+      "forma_pagamento_preferida": "Boleto 30 dias",
+      "endereco": {
+        "rua": "Rua do Comércio",
+        "numero": "512",
+        "complemento": null,
+        "bairro": "Cidade Industrial",
+        "cidade": "Contagem",
+        "cep": "32210-300",
+        "uf": "MG"
+      },
+      "observacoes": "Retira com caminhão próprio",
+      "ativo": true
+    },
+    {
+      "nome": "PlastRecicla Indústria de Plásticos Ltda",
+      "tipo": "comprador",
+      "pessoa": "juridica",
+      "documento": "01.895.559/0001-30",
+      "telefone": "(31) 3371-8845",
+      "email": "pedidos.plastrecicla@example.com",
+      "forma_pagamento_preferida": "Transferência bancária",
+      "endereco": {
+        "rua": "Rua dos Polímeros",
+        "numero": "77",
+        "complemento": null,
+        "bairro": "Jardim Piemonte",
+        "cidade": "Betim",
+        "cep": "32689-410",
+        "uf": "MG"
+      },
+      "observacoes": "Exige material separado por tipo",
+      "ativo": true
+    },
+    {
+      "nome": "Supermercado Bom Preço Ltda",
+      "tipo": "fornecedor",
+      "pessoa": "juridica",
+      "documento": "79.711.471/0001-08",
+      "telefone": "(31) 3491-2260",
+      "email": "gerencia.bompreco@example.com",
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua Ipê Amarelo",
+        "numero": "1020",
+        "complemento": null,
+        "bairro": "Santa Mônica",
+        "cidade": "Belo Horizonte",
+        "cep": "31530-200",
+        "uf": "MG"
+      },
+      "observacoes": "Coleta de papelão toda semana",
+      "ativo": true
+    },
+    {
+      "nome": "Condomínio Residencial Jardim das Flores",
+      "tipo": "fornecedor",
+      "pessoa": "juridica",
+      "documento": "04.974.650/0001-39",
+      "telefone": "(31) 3442-1187",
+      "email": "sindico.jardimflores@example.com",
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua das Orquídeas",
+        "numero": "300",
+        "complemento": null,
+        "bairro": "Planalto",
+        "cidade": "Belo Horizonte",
+        "cep": "31730-460",
+        "uf": "MG"
+      },
+      "observacoes": "Coleta seletiva quinzenal",
+      "ativo": true
+    },
+    {
+      "nome": "José Carlos da Silva",
+      "tipo": "fornecedor",
+      "pessoa": "fisica",
+      "documento": "526.018.159-36",
+      "telefone": "(31) 98734-2210",
+      "email": null,
+      "forma_pagamento_preferida": "Dinheiro",
+      "endereco": {
+        "rua": "Rua Sete de Setembro",
+        "numero": "45",
+        "complemento": null,
+        "bairro": "Vila Esperança",
+        "cidade": "Contagem",
+        "cep": "32040-180",
+        "uf": "MG"
+      },
+      "observacoes": "Catador, entrega com carrinho",
+      "ativo": true
+    },
+    {
+      "nome": "Maria Aparecida Souza",
+      "tipo": "fornecedor",
+      "pessoa": "fisica",
+      "documento": "083.016.613-35",
+      "telefone": "(31) 99215-6684",
+      "email": null,
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua Bem-te-vi",
+        "numero": "128",
+        "complemento": null,
+        "bairro": "Nova Contagem",
+        "cidade": "Contagem",
+        "cep": "32070-530",
+        "uf": "MG"
+      },
+      "observacoes": "Catadora, traz latinha e PET",
+      "ativo": true
+    },
+    {
+      "nome": "Antônio Ferreira Lima",
+      "tipo": "ambos",
+      "pessoa": "fisica",
+      "documento": "186.091.390-64",
+      "telefone": "(31) 98810-4473",
+      "email": "antonio.ferreira@example.com",
+      "forma_pagamento_preferida": "Dinheiro",
+      "endereco": {
+        "rua": "Rua Tiradentes",
+        "numero": "890",
+        "complemento": null,
+        "bairro": "Centro",
+        "cidade": "Sabará",
+        "cep": "34505-030",
+        "uf": "MG"
+      },
+      "observacoes": "Ferro-velho parceiro",
+      "ativo": true
+    },
+    {
+      "nome": "Paulo Henrique Rocha",
+      "tipo": "fornecedor",
+      "pessoa": "fisica",
+      "documento": "996.030.824-60",
+      "telefone": "(31) 99677-3015",
+      "email": "paulo.rocha@example.com",
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua dos Mecânicos",
+        "numero": "55",
+        "complemento": null,
+        "bairro": "Eldorado",
+        "cidade": "Contagem",
+        "cep": "32315-090",
+        "uf": "MG"
+      },
+      "observacoes": "Oficina, vende bateria e ferro",
+      "ativo": true
+    },
+    {
+      "nome": "Luciana Martins Oliveira",
+      "tipo": "fornecedor",
+      "pessoa": "fisica",
+      "documento": "628.194.821-42",
+      "telefone": "(31) 98456-1290",
+      "email": "luciana.martins@example.com",
+      "forma_pagamento_preferida": "Pix",
+      "endereco": {
+        "rua": "Rua Jasmim",
+        "numero": "210",
+        "complemento": null,
+        "bairro": "Bandeirantes",
+        "cidade": "Belo Horizonte",
+        "cep": "31340-050",
+        "uf": "MG"
+      },
+      "observacoes": "Mudança, vendeu sucata de uma vez",
+      "ativo": true
+    }
+  ],
+  "transacoes": [
+    {
+      "data": "2026-09-02",
+      "cliente": "Supermercado Bom Preço Ltda",
+      "tipo": "compra",
+      "material": "Papelão",
+      "quantidade": 1250,
+      "unidade": "kg",
+      "preco_unitario": 0.55,
+      "total": 687.5,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-04",
+      "cliente": "José Carlos da Silva",
+      "tipo": "compra",
+      "material": "Alumínio latinha",
+      "quantidade": 48,
+      "unidade": "kg",
+      "preco_unitario": 6.2,
+      "total": 297.6,
+      "forma_pagamento": "Dinheiro",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-08",
+      "cliente": "Paulo Henrique Rocha",
+      "tipo": "compra",
+      "material": "Bateria automotiva",
+      "quantidade": 14,
+      "unidade": "unidade",
+      "preco_unitario": 12.0,
+      "total": 168.0,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-11",
+      "cliente": "Antônio Ferreira Lima",
+      "tipo": "compra",
+      "material": "Ferro / sucata pesada",
+      "quantidade": 2300,
+      "unidade": "kg",
+      "preco_unitario": 0.85,
+      "total": 1955.0,
+      "forma_pagamento": "Dinheiro",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-15",
+      "cliente": "Papelão Forte Embalagens Ltda",
+      "tipo": "venda",
+      "material": "Papelão",
+      "quantidade": 1180,
+      "unidade": "kg",
+      "preco_unitario": 0.9,
+      "total": 1062.0,
+      "forma_pagamento": "Boleto 30 dias",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-18",
+      "cliente": "Maria Aparecida Souza",
+      "tipo": "compra",
+      "material": "PET transparente",
+      "quantidade": 96,
+      "unidade": "kg",
+      "preco_unitario": 2.3,
+      "total": 220.8,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-22",
+      "cliente": "Metalúrgica Vale do Aço S.A.",
+      "tipo": "venda",
+      "material": "Ferro / sucata pesada",
+      "quantidade": 2250,
+      "unidade": "kg",
+      "preco_unitario": 1.3,
+      "total": 2925.0,
+      "forma_pagamento": "Transferência bancária",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-25",
+      "cliente": "Luciana Martins Oliveira",
+      "tipo": "compra",
+      "material": "Cobre misto",
+      "quantidade": 18.5,
+      "unidade": "kg",
+      "preco_unitario": 38.0,
+      "total": 703.0,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-09-29",
+      "cliente": "Condomínio Residencial Jardim das Flores",
+      "tipo": "compra",
+      "material": "Papel branco",
+      "quantidade": 210,
+      "unidade": "kg",
+      "preco_unitario": 0.7,
+      "total": 147.0,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-02",
+      "cliente": "Depósito São Judas Ltda",
+      "tipo": "venda",
+      "material": "Bateria automotiva",
+      "quantidade": 14,
+      "unidade": "unidade",
+      "preco_unitario": 17.0,
+      "total": 238.0,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-06",
+      "cliente": "Depósito São Judas Ltda",
+      "tipo": "compra",
+      "material": "Inox",
+      "quantidade": 85,
+      "unidade": "kg",
+      "preco_unitario": 4.5,
+      "total": 382.5,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-09",
+      "cliente": "PlastRecicla Indústria de Plásticos Ltda",
+      "tipo": "venda",
+      "material": "PET transparente",
+      "quantidade": 380,
+      "unidade": "kg",
+      "preco_unitario": 3.2,
+      "total": 1216.0,
+      "forma_pagamento": "Transferência bancária",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-13",
+      "cliente": "Supermercado Bom Preço Ltda",
+      "tipo": "compra",
+      "material": "Papelão",
+      "quantidade": 1420,
+      "unidade": "kg",
+      "preco_unitario": 0.55,
+      "total": 781.0,
+      "forma_pagamento": "Pix",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-16",
+      "cliente": "Reciclagem Minas Gerais Ltda",
+      "tipo": "venda",
+      "material": "Papel branco",
+      "quantidade": 200,
+      "unidade": "kg",
+      "preco_unitario": 1.1,
+      "total": 220.0,
+      "forma_pagamento": "Boleto 30 dias",
+      "status": "a_pagar"
+    },
+    {
+      "data": "2026-10-20",
+      "cliente": "Metalúrgica Vale do Aço S.A.",
+      "tipo": "venda",
+      "material": "Cobre misto",
+      "quantidade": 18,
+      "unidade": "kg",
+      "preco_unitario": 44.5,
+      "total": 801.0,
+      "forma_pagamento": "Transferência bancária",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-21",
+      "cliente": "José Carlos da Silva",
+      "tipo": "compra",
+      "material": "Alumínio latinha",
+      "quantidade": 62,
+      "unidade": "kg",
+      "preco_unitario": 6.2,
+      "total": 384.4,
+      "forma_pagamento": "Dinheiro",
+      "status": "pago"
+    },
+    {
+      "data": "2026-10-23",
+      "cliente": "Papelão Forte Embalagens Ltda",
+      "tipo": "venda",
+      "material": "Papelão",
+      "quantidade": 1380,
+      "unidade": "kg",
+      "preco_unitario": 0.9,
+      "total": 1242.0,
+      "forma_pagamento": "Boleto 30 dias",
+      "status": "a_pagar"
+    },
+    {
+      "data": "2026-10-26",
+      "cliente": "Reciclagem Minas Gerais Ltda",
+      "tipo": "venda",
+      "material": "Alumínio latinha",
+      "quantidade": 105,
+      "unidade": "kg",
+      "preco_unitario": 7.8,
+      "total": 819.0,
+      "forma_pagamento": "Cartão de crédito",
+      "status": "parcelado",
+      "parcelas": 3
+    }
+  ],
+  "coletas": [
+    {
+      "cliente": "Supermercado Bom Preço Ltda",
+      "tipo": "material",
+      "material": "Papelão",
+      "peso_estimado_kg": 1250,
+      "valor": 687.5,
+      "data": "2026-09-02",
+      "agendamento": null,
+      "status": "realizada",
+      "observacao": "Fardos na doca dos fundos"
+    },
+    {
+      "cliente": "Condomínio Residencial Jardim das Flores",
+      "tipo": "material",
+      "material": "Papel branco",
+      "peso_estimado_kg": 210,
+      "valor": 147.0,
+      "data": "2026-09-29",
+      "agendamento": null,
+      "status": "realizada",
+      "observacao": "Falar com o porteiro"
+    },
+    {
+      "cliente": "Supermercado Bom Preço Ltda",
+      "tipo": "material",
+      "material": "Papelão",
+      "peso_estimado_kg": 1420,
+      "valor": 781.0,
+      "data": "2026-10-13",
+      "agendamento": null,
+      "status": "realizada",
+      "observacao": "Fardos na doca dos fundos"
+    },
+    {
+      "cliente": "Paulo Henrique Rocha",
+      "tipo": "servico",
+      "material": null,
+      "peso_estimado_kg": null,
+      "valor": 80.0,
+      "data": "2026-10-20",
+      "agendamento": null,
+      "status": "realizada",
+      "observacao": "Retirada de baterias e peças velhas da oficina"
+    },
+    {
+      "cliente": "Supermercado Bom Preço Ltda",
+      "tipo": "material",
+      "material": "Papelão",
+      "peso_estimado_kg": 1300,
+      "valor": 715.0,
+      "data": "2026-11-03",
+      "agendamento": "2026-11-03T08:00",
+      "status": "agendada",
+      "observacao": "Coleta semanal"
+    },
+    {
+      "cliente": "Condomínio Residencial Jardim das Flores",
+      "tipo": "material",
+      "material": "PET transparente",
+      "peso_estimado_kg": 90,
+      "valor": 207.0,
+      "data": "2026-11-04",
+      "agendamento": "2026-11-04T14:00",
+      "status": "agendada",
+      "observacao": "Coleta seletiva quinzenal"
+    },
+    {
+      "cliente": "Luciana Martins Oliveira",
+      "tipo": "servico",
+      "material": null,
+      "peso_estimado_kg": null,
+      "valor": 150.0,
+      "data": "2026-11-05",
+      "agendamento": "2026-11-05T10:30",
+      "status": "agendada",
+      "observacao": "Retirada de móveis de metal da mudança"
+    },
+    {
+      "cliente": "Antônio Ferreira Lima",
+      "tipo": "servico",
+      "material": null,
+      "peso_estimado_kg": null,
+      "valor": 250.0,
+      "data": "2026-11-07",
+      "agendamento": "2026-11-07T09:00",
+      "status": "agendada",
+      "observacao": "Frete de caçamba com sucata de ferro"
+    }
+  ]
+}

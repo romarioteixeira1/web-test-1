@@ -1,4 +1,4 @@
-# BEST WAY
+# EcoControl
 
 Aplicativo de cadastro de clientes e coletas para uma empresa de reciclagem (React + TypeScript no front-end, API em Cloudflare Worker, dados em D1), pronto para deploy na Cloudflare.
 
@@ -39,6 +39,7 @@ npm run lint             # lint com Oxlint
 npm run deploy           # build + wrangler deploy (requer login: npx wrangler login)
 npm run db:migrate:local # aplica as migrações no D1 local (usado pelo `npm run dev`)
 npm run db:migrate:remote # aplica as migrações no D1 remoto (produção)
+npm run db:seed:local    # cadastra os dados de teste de scripts/seed-ecocontrol.json no D1 local (pode rodar de novo, não duplica)
 ```
 
 ## Banco de dados (D1)
@@ -49,6 +50,18 @@ O banco `web-test-1-db` já foi criado na conta Cloudflare e está referenciado 
 npm run db:migrate:local   # para continuar testando localmente
 npm run db:migrate:remote  # para aplicar em produção antes/depois do deploy
 ```
+
+## Login
+
+O app inteiro (telas e `/api/*`) exige login com usuário e senha (`worker/auth.ts`). As senhas ficam só como hash PBKDF2 no D1, e a sessão dura 30 dias num cookie `HttpOnly`.
+
+- **Primeiro acesso:** enquanto não existe nenhum usuário, a tela de login vira "Criar acesso" e quem abrir o app cria a conta de administrador. Depois de aplicar a migração `0011` em produção, abra o app e crie a sua conta logo em seguida.
+- **Perfis:** `admin` usa o app inteiro e gerencia usuários na tela Usuários (`/usuarios`, `worker/users.ts`): cria, edita, redefine senhas e exclui. `operador` usa tudo, menos essa tela. Um administrador não pode excluir nem rebaixar a si mesmo, então sempre sobra pelo menos um.
+- **Alguém esqueceu a senha:** um administrador define uma nova em Usuários → Editar.
+- **O único administrador esqueceu a senha:** apague os usuários para a tela de primeiro acesso voltar:
+  ```bash
+  npx wrangler d1 execute web-test-1-db --remote --command "DELETE FROM users"
+  ```
 
 ## Deploy na Cloudflare
 

@@ -1,0 +1,302 @@
+/** Floating help chat (src/components/assistant/HelpChat.tsx). */
+@layer components {
+  .help-chat {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .help-toggle {
+    min-height: 48px;
+    padding: 0 20px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-green-700);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(18, 22, 16, 0.28);
+    transition: background 0.15s, transform 0.15s;
+  }
+  .help-toggle:hover {
+    background: var(--color-green-800);
+    transform: translateY(-1px);
+  }
+  .help-toggle:focus-visible {
+    outline: 3px solid var(--color-green-300);
+    outline-offset: 2px;
+  }
+  .help-toggle.is-open {
+    width: 48px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .help-panel {
+    width: 370px;
+    max-width: calc(100vw - 32px);
+    height: 540px;
+    max-height: calc(100svh - 110px);
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(18, 22, 16, 0.3);
+    overflow: hidden;
+    transform-origin: bottom right;
+  }
+
+  .help-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px 14px 16px;
+    background: linear-gradient(135deg, var(--color-green-700), var(--color-green-500));
+    color: #fff;
+  }
+  .help-head > div {
+    flex: 1;
+    min-width: 0;
+  }
+  .help-head h2 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .help-head span {
+    font-size: 12px;
+    opacity: 0.85;
+  }
+  .help-head .icon {
+    color: #fff;
+  }
+  .help-head .icon:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .help-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .help-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--color-surface-2);
+  }
+  .help-msg {
+    max-width: 85%;
+    padding: 10px 13px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .help-msg.assistant {
+    align-self: flex-start;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-soft);
+    color: var(--color-ink);
+    border-bottom-left-radius: 4px;
+  }
+  .help-msg.user {
+    align-self: flex-end;
+    background: var(--color-accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .help-turn {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .help-turn.user {
+    align-items: flex-end;
+  }
+  .help-turn.assistant {
+    align-items: flex-start;
+  }
+
+  /* "Abrir …" buttons under an answer. */
+  .help-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 85%;
+  }
+  .help-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--color-green-200);
+    background: var(--color-accent-soft);
+    color: var(--color-accent-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .help-link span {
+    flex: 1;
+  }
+  .help-link:hover:not(:disabled) {
+    background: var(--color-surface);
+    border-color: var(--color-green-300);
+  }
+  .help-link:disabled {
+    cursor: default;
+    opacity: 0.65;
+    font-weight: 500;
+  }
+  .help-link:focus-visible,
+  .help-topic:focus-visible {
+    outline: 2px solid var(--color-green-300);
+    outline-offset: 2px;
+  }
+
+  .help-typing {
+    display: inline-flex;
+    gap: 4px;
+    padding: 14px 16px;
+  }
+  .help-typing span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-green-400);
+    animation: help-bounce 1s infinite ease-in-out;
+  }
+  .help-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .help-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .help-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .help-topic {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--color-green-200);
+    background: var(--color-surface);
+    color: var(--color-accent-text);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+  }
+  .help-topic:hover {
+    background: var(--color-accent-soft);
+    border-color: var(--color-green-300);
+  }
+  .help-topic.more {
+    border-style: dashed;
+    color: var(--color-ink);
+  }
+
+  .help-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--color-border-soft);
+  }
+  .help-form .inp {
+    flex: 1;
+    min-height: 44px;
+    max-height: 110px;
+    padding-top: 11px;
+    resize: none;
+    field-sizing: content;
+  }
+  .help-send {
+    width: 44px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  @keyframes help-bounce {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.5;
+    }
+    40% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+
+  /* Phones: sits above the bottom tab bar and shrinks to a round icon button. */
+  @media (max-width: 900px) {
+    .help-chat {
+      right: 16px;
+      bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+    .help-toggle {
+      width: 52px;
+      min-height: 52px;
+      padding: 0;
+      justify-content: center;
+    }
+    .help-toggle > span:not(.sr-only) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .help-panel {
+      max-height: calc(100svh - 200px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .help-typing span,
+    .help-toggle {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  @media print {
+    .help-chat {
+      display: none;
+    }
+  }
+}

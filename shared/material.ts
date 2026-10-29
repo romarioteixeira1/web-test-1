@@ -1,9 +1,13 @@
 export type MaterialStatus = 'active' | 'inactive'
 
+export const materialCategories = ['Papel', 'Plástico', 'Metal', 'Vidro', 'Eletrônico'] as const
+export type MaterialCategory = (typeof materialCategories)[number]
+
 export interface MaterialType {
   id: number
   parent_id: number | null
   name: string
+  category: MaterialCategory | null
   unit: string
   status: MaterialStatus
   created_at: string
@@ -15,6 +19,7 @@ export type MaterialTypeInput = Omit<MaterialType, 'id' | 'created_at' | 'update
 export const emptyMaterialTypeInput: MaterialTypeInput = {
   parent_id: null,
   name: '',
+  category: 'Papel',
   unit: 'kg',
   status: 'active',
 }

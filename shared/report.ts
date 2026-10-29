@@ -26,3 +26,14 @@ export interface CustomerReportRow {
   sell_weight: number
   sell_total: number
 }
+
+export interface CashFlowRow {
+  period: string
+  entradas: number
+  saidas: number
+}
+
+export interface CashFlowReport {
+  opening_balance: number
+  rows: CashFlowRow[]
+}
