@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { MIN_PASSWORD_LENGTH, type User } from '../../shared/auth'
 import { login, register, setupAccount } from '../api/auth'
 import { BrandLogo } from '../components/layout/BrandLogo'
+import { PasswordInput } from '../components/ui/PasswordInput'
 import { errorMessage } from '../lib/format'
 
 type Props = {
@@ -108,9 +109,8 @@ export function LoginPage({ mode, onSignedIn }: Props) {
           />
 
           <label htmlFor="auth-password">Senha</label>
-          <input
+          <PasswordInput
             id="auth-password"
-            type="password"
             autoComplete={isSetup ? 'new-password' : 'current-password'}
             placeholder={isSetup ? `Mínimo de ${MIN_PASSWORD_LENGTH} caracteres` : 'Sua senha'}
             required
@@ -121,9 +121,8 @@ export function LoginPage({ mode, onSignedIn }: Props) {
           {isSetup && (
             <>
               <label htmlFor="auth-confirm">Confirme a senha</label>
-              <input
+              <PasswordInput
                 id="auth-confirm"
-                type="password"
                 autoComplete="new-password"
                 placeholder="Repita a senha"
                 required

@@ -436,6 +436,34 @@
     background: var(--color-surface-2);
     color: var(--color-ink-2);
   }
+  .pwd {
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+  .pwd > input[type] {
+    width: 100%;
+    padding-right: 44px;
+  }
+  .pwd-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-ink-2);
+    cursor: pointer;
+    transform: translateY(-50%);
+  }
+  .pwd-toggle:hover {
+    color: var(--color-ink);
+    background: var(--color-surface-2);
+  }
   .inp.invalid {
     border-color: var(--color-danger);
     box-shadow: 0 0 0 3px rgba(168, 64, 44, 0.14);

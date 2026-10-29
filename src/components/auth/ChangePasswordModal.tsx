@@ -4,6 +4,7 @@ import { changePassword } from '../../api/auth'
 import { useToast } from '../../app/context'
 import { errorMessage } from '../../lib/format'
 import { Field, Modal } from '../ui/Modal'
+import { PasswordInput } from '../ui/PasswordInput'
 
 export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const toast = useToast()
@@ -43,30 +44,27 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       onClose={onClose}
     >
       <Field label="Senha atual" htmlFor="password-current">
-        <input
+        <PasswordInput
           id="password-current"
           className="inp"
-          type="password"
           autoComplete="current-password"
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
         />
       </Field>
       <Field label="Nova senha" htmlFor="password-new" hint={`Mínimo de ${MIN_PASSWORD_LENGTH} caracteres.`}>
-        <input
+        <PasswordInput
           id="password-new"
           className="inp"
-          type="password"
           autoComplete="new-password"
           value={next}
           onChange={(e) => setNext(e.target.value)}
         />
       </Field>
       <Field label="Confirme a nova senha" htmlFor="password-confirm">
-        <input
+        <PasswordInput
           id="password-confirm"
           className="inp"
-          type="password"
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}

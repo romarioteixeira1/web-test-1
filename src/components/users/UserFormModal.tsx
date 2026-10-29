@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MIN_PASSWORD_LENGTH, userRoleLabels, type UserInput, type UserRole } from '../../../shared/auth'
 import { ChoiceGroup, Field, Modal } from '../ui/Modal'
+import { PasswordInput } from '../ui/PasswordInput'
 
 const roleOptions = Object.entries(userRoleLabels) as [UserRole, string][]
 
@@ -99,20 +100,18 @@ export function UserFormModal({ mode, initialValue, isSelf, submitting, error, o
           htmlFor="user-password"
           hint={isEdit ? 'Deixe em branco para manter a atual.' : `Mínimo de ${MIN_PASSWORD_LENGTH} caracteres.`}
         >
-          <input
+          <PasswordInput
             id="user-password"
             className="inp"
-            type="password"
             autoComplete="new-password"
             value={form.password}
             onChange={(e) => set('password', e.target.value)}
           />
         </Field>
         <Field label={isEdit ? 'Confirme a nova senha' : 'Confirme a senha *'} htmlFor="user-confirm">
-          <input
+          <PasswordInput
             id="user-confirm"
             className="inp"
-            type="password"
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => {
